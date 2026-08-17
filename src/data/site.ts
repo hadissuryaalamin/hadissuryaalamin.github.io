@@ -31,12 +31,13 @@ export const identity = {
 } as const;
 
 /**
- * The hero meta line. Verbatim string from epic.md §5.1(a) — do not alter
- * capitalisation or punctuation ("Open" is capitalised here; contrast with
- * cv.ts's contact line, which uses lowercase "open" per epic §5.3).
+ * The hero meta line. Adapted from epic.md §5.1(a)'s draft: client asked to
+ * drop the "including Singapore" qualifier and the "expected December 2026"
+ * date, keeping "Open" capitalised (contrast with cv.ts's contact line,
+ * which uses lowercase "open" per epic §5.3).
  */
 export const heroMetaLine =
-  'Canberra, Australia · Open to relocation, including Singapore · Master of Machine Learning and Computer Vision, ANU — expected December 2026';
+  'Canberra, Australia · Open to relocation · Master of Machine Learning and Computer Vision, ANU';
 
 /** Primary nav, present on every page (epic §7.7). Theme toggle is 002/004's markup, not data. */
 export const nav: LinkItem[] = [

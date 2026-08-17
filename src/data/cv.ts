@@ -18,8 +18,8 @@ export interface LinkItem {
   href: string;
 }
 
-/** Contact block for the CV page (epic §5.3). Lowercase "open" — verbatim per epic, distinct from the hero's capitalised meta line in site.ts. */
-export const cvContactLine = 'Canberra, Australia · open to relocation, including Singapore';
+/** Contact block for the CV page (epic §5.3). Lowercase "open", distinct from the hero's capitalised meta line in site.ts. Client asked to drop the "including Singapore" qualifier. */
+export const cvContactLine = 'Canberra, Australia · open to relocation';
 
 export const cvContact = {
   email: identity.email,

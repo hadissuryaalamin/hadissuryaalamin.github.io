@@ -32,7 +32,7 @@ export const pageMeta: Record<'home' | 'cv' | 'notFound', PageMeta> = {
   home: {
     title: 'Hadis Surya Al Amin — Machine Learning & Computer Vision Engineer',
     description:
-      'Machine learning and computer vision engineer with four years of industrial electronics engineering behind it. Based in Canberra, Australia — open to relocation, including Singapore.',
+      'Machine learning and computer vision engineer with four years of industrial electronics engineering behind it. Based in Canberra, Australia — open to relocation.',
   },
   cv: {
     title: 'CV — Hadis Surya Al Amin',
