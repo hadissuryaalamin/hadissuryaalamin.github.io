@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 depends_on: []
 parallel: true
 conflicts_with: []

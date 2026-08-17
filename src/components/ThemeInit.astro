@@ -1,0 +1,91 @@
+---
+// ThemeInit.astro — task 004 (core functionality/logic). The only file this
+// task owns inside src/components/; everything else there belongs to 002.
+//
+// Bundles two independent pieces that epic.md §7.6 requires, exposed via one
+// prop because they belong in two different places in the document and a
+// <button> is not valid inside <head>:
+//
+//   1. `<ThemeInit />`         — used once, inside <head>, as early as
+//      possible (ideally right after <meta charset>). Renders:
+//        - <meta name="color-scheme" content="dark light" /> (§7.6 step 8)
+//        - a hand-written, non-module `is:inline` script that reads
+//          localStorage and sets `data-theme` on <html> *before first
+//          paint* (§7.6 step 6, criterion 39 — no flash of the wrong theme).
+//
+//   2. `<ThemeInit toggle />`  — used once, inside <nav>. Renders the real
+//      theme-toggle <button> (§7.6 step 7) and a small bundled module
+//      script that wires it up via src/scripts/theme.ts.
+//
+// Contract (must match src/scripts/theme.ts and 002's token/CSS files):
+//   - localStorage key "theme", values "light" | "dark".
+//   - <html data-theme="light"|"dark">; attribute ABSENT = follow the OS via
+//     `@media (prefers-color-scheme: dark)`. Never write any other value.
+//
+// Why the inline script below duplicates src/scripts/theme.ts instead of
+// importing it: a module script is deferred by the browser and would run
+// after parsing/paint has already started, which is exactly the flash this
+// script exists to prevent. It is intentionally tiny and kept in sync with
+// the THEME_STORAGE_KEY / value contract in theme.ts by hand.
+//
+// Styling hook for 002: the toggle renders as `<button id="theme-toggle"
+// class="theme-toggle">`; style via that id/class, no inline styles imposed
+// here.
+
+interface Props {
+  toggle?: boolean;
+}
+
+const { toggle = false } = Astro.props;
+---
+
+{
+  !toggle && (
+    <Fragment>
+      <meta name="color-scheme" content="dark light" />
+      <script is:inline>
+        (function () {
+          try {
+            var stored = window.localStorage.getItem("theme");
+            if (stored === "light" || stored === "dark") {
+              document.documentElement.setAttribute("data-theme", stored);
+            }
+            // No stored value: leave the attribute absent so the
+            // `prefers-color-scheme` CSS block decides (system default).
+          } catch (err) {
+            // localStorage unavailable — fall back to system preference.
+          }
+        })();
+      </script>
+    </Fragment>
+  )
+}
+
+{
+  toggle && (
+    <button
+      type="button"
+      id="theme-toggle"
+      class="theme-toggle"
+      aria-pressed="false"
+      aria-label="Switch between light and dark theme"
+    >
+      <span aria-hidden="true" data-theme-toggle-icon>
+        &#x25D1;
+      </span>
+    </button>
+  )
+}
+
+{
+  toggle && (
+    <script>
+      import { initThemeToggle } from "../scripts/theme";
+
+      const button = document.getElementById("theme-toggle");
+      if (button instanceof HTMLButtonElement) {
+        initThemeToggle(button);
+      }
+    </script>
+  )
+}
