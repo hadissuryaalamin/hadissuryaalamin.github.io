@@ -20,7 +20,13 @@ const THEMES = ["light", "dark"] as const;
 for (const route of ALL_ROUTES) {
   for (const theme of THEMES) {
     test(`criteria 45-46: ${route} has zero serious/critical axe violations in ${theme} mode`, async ({ page }) => {
-      await page.emulateMedia({ colorScheme: theme });
+      // Also force reduced motion: axe's contrast check samples the DOM at
+      // whatever instant analyze() runs, and without this the hero's
+      // entrance fade (epic.md §8.3) can be mid-tween, sampling a transient
+      // opacity-blended colour instead of the element's steady-state
+      // contrast (which is what WCAG 1.4.3 actually governs). This also
+      // exercises the reduced-motion path required by criterion 42.
+      await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
       await page.goto(route);
 
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();

@@ -1,0 +1,57 @@
+---
+// Home page project card (epic.md §5.1c). The whole card is a single click
+// target to the detail page (repo links live on the detail page only, so
+// there's never two competing links inside one card) — implemented as a
+// "stretched link" (see .stretched-link in global.css): the actual <a>
+// wraps only the project name, and its ::after pseudo-element extends the
+// clickable area over the whole <li>. This keeps the link's accessible name
+// to just the project name, rather than the entire card's prose/metrics/
+// stack line — genuinely better for screen-reader users, and it also keeps
+// the card's stack line (which can legitimately contain the word "GitHub",
+// e.g. "Git/GitHub") from ever being part of a link's accessible text.
+//
+// Rendered as an <li> so spec/content.test.ts's
+// `anchor.closest("li, article, ...")` finds the right container for the
+// IDX-alpha no-Sharpe / work-in-progress checks — `.closest()` still finds
+// the <li> ancestor from the nested title anchor regardless of the <h3> in
+// between.
+//
+// Carries `data-animate="card"` per src/scripts/motion.ts's contract — must
+// be nested inside a `[data-animate-stagger]` ancestor (the <ul> in
+// ProjectsSection) to actually animate.
+import type { FeaturedProject } from '../data/projects';
+import MetricStrip from './MetricStrip.astro';
+
+interface Props {
+  project: FeaturedProject;
+  featured?: boolean;
+}
+
+const { project, featured = false } = Astro.props;
+---
+
+<li
+  data-animate="card"
+  class:list={[
+    'relative rounded-lg border border-border bg-bg-elevated p-6 transition-colors hover:border-border-strong md:p-8',
+    { 'md:col-span-2': featured },
+  ]}
+>
+  <div class="flex flex-wrap items-center gap-3">
+    <h3 class="text-h3 text-text">
+      <a href={`/projects/${project.slug}/`} class="stretched-link no-underline">{project.name}</a>
+    </h3>
+    {
+      project.status === 'wip' && (
+        <span class="text-micro rounded-full border border-accent px-2 py-1 text-accent-ink">
+          {project.statusLabel}
+        </span>
+      )
+    }
+  </div>
+  <p class="prose-measure mt-3 text-text-muted">{project.cardSummary}</p>
+  <div class="mt-6">
+    <MetricStrip metrics={project.cardMetrics} />
+  </div>
+  <p class="text-meta mt-6 text-text-muted">{project.stack.join(' · ')}</p>
+</li>

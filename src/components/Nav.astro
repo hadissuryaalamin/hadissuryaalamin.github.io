@@ -1,0 +1,35 @@
+---
+// Primary site nav (epic.md §7.7): Home, Projects, CV, Contact + theme
+// toggle. ThemeInit (task 004, src/components/ThemeInit.astro) owns the
+// toggle button's markup/behaviour; this file only styles it via
+// #theme-toggle/.theme-toggle (see global.css).
+//
+// The Contact item is styled as a small accent-filled button rather than a
+// plain text link like the others — see .btn-primary-sm in global.css for
+// why (epic.md §2 goal 2: email reachable and prominent from every page).
+import { nav } from '../data/site';
+import ThemeInit from './ThemeInit.astro';
+
+const isMailto = (href: string) => href.startsWith('mailto:');
+---
+
+<nav
+  aria-label="Primary"
+  class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5 md:px-8 xl:px-12"
+>
+  <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
+    {
+      nav.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class={isMailto(item.href) ? 'btn-primary-sm' : 'link-quiet text-sm font-medium'}
+          >
+            {item.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+  <ThemeInit toggle />
+</nav>

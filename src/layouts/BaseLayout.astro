@@ -1,0 +1,83 @@
+---
+// Shared page shell (epic.md §5, §7.7, §9.1): skip link (first focusable
+// element), header/nav, main, footer. Every page in src/pages/** wraps its
+// content in this layout so the invariants (lang, title, viewport, nav,
+// exactly one h1, landmarks) hold everywhere for free.
+import '../styles/global.css';
+import Footer from '../components/Footer.astro';
+import Nav from '../components/Nav.astro';
+import ThemeInit from '../components/ThemeInit.astro';
+import { skipLinkLabel } from '../data/site';
+import { siteMetaDefaults } from '../data/meta';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImageURL = new URL(siteMetaDefaults.ogImagePath, Astro.site);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <ThemeInit />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+
+    <meta property="og:type" content={siteMetaDefaults.ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:image:alt" content={siteMetaDefaults.ogImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <link
+      rel="preload"
+      href="/fonts/inter-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preload"
+      href="/fonts/inter-600.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preload"
+      href="/fonts/jetbrains-mono-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body class="bg-bg text-text">
+    <a href="#main-content" class="skip-link">{skipLinkLabel}</a>
+    <header>
+      <Nav />
+    </header>
+    <main id="main-content">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      import { initMotion } from '../scripts/motion';
+      initMotion();
+    </script>
+  </body>
+</html>

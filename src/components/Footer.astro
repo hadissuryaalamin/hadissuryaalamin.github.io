@@ -1,0 +1,16 @@
+---
+// Footer (epic.md §5.1f): name, year, link back to this site's own repo. No
+// "built with love", no emoji.
+import { footer } from '../data/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="hairline mx-auto max-w-6xl px-6 py-8 md:px-8 xl:px-12">
+  <div
+    class="text-meta flex flex-col gap-2 text-text-muted sm:flex-row sm:items-center sm:justify-between"
+  >
+    <p>{footer.name} © {year}</p>
+    <a href={footer.repoLink.href} class="link-quiet" rel="noopener">{footer.repoLink.label}</a>
+  </div>
+</footer>

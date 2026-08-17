@@ -1,0 +1,110 @@
+---
+// Shared project detail template (epic.md §5.2) for all five featured
+// projects at their §5.2 slugs.
+//
+// Motion: h1/lead and the "What it is/did/found" prose use
+// `data-animate="section"` (epic.md §8.3's general "section headings and
+// body" case). The WIP status badge, the context/dates/stack meta strip and
+// the metrics block are deliberately left un-animated — they sit close
+// enough to the top of the page (above the 85% scroll-trigger threshold at
+// scroll position 0) that they'd start their on-load fade immediately, and
+// as small/meta-sized coloured text they don't have the contrast margin to
+// survive being sampled mid-fade — see updates/002.md.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import MetricStrip from '../../components/MetricStrip.astro';
+import { featuredProjects, type FeaturedProject } from '../../data/projects';
+
+export function getStaticPaths() {
+  return featuredProjects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+
+interface Props {
+  project: FeaturedProject;
+}
+
+const { project } = Astro.props;
+const index = featuredProjects.findIndex((p) => p.slug === project.slug);
+const prev = featuredProjects[(index - 1 + featuredProjects.length) % featuredProjects.length];
+const next = featuredProjects[(index + 1) % featuredProjects.length];
+---
+
+<BaseLayout title={project.metaTitle} description={project.metaDescription}>
+  <article class="mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12">
+    <a href="/#projects" data-animate="section" class="link-quiet text-sm font-medium"
+      >← All projects</a
+    >
+
+    <header class="mt-8">
+      <h1 data-animate="section" class="text-display text-text">{project.name}</h1>
+      <p data-animate="section" class="text-hero-lead mt-4 text-text-muted">
+        {project.cardSummary}
+      </p>
+      {
+        project.status === 'wip' && (
+          <p class="text-micro mt-4 inline-block rounded-full border border-accent px-3 py-1 text-accent-ink">
+            {project.statusLabel}
+          </p>
+        )
+      }
+    </header>
+
+    <dl class="text-meta mt-8 flex flex-wrap gap-x-10 gap-y-4">
+      <div>
+        <dt class="text-micro text-text-muted">Context</dt>
+        <dd class="mt-1 text-text-muted">{project.context}</dd>
+      </div>
+      <div>
+        <dt class="text-micro text-text-muted">Dates</dt>
+        <dd class="mt-1 text-text-muted">{project.dates}</dd>
+      </div>
+      <div>
+        <dt class="text-micro text-text-muted">Stack</dt>
+        <dd class="mt-1 text-text-muted">{project.stack.join(' · ')}</dd>
+      </div>
+    </dl>
+
+    <div class="mt-10">
+      <MetricStrip metrics={project.detailMetrics} />
+    </div>
+
+    <div class="prose-measure mt-12 flex flex-col gap-10">
+      <div data-animate="section">
+        <h2 class="text-h2 text-text">What it is</h2>
+        {project.whatItIs.map((paragraph) => <p class="mt-4 text-text-muted">{paragraph}</p>)}
+      </div>
+      <div data-animate="section">
+        <h2 class="text-h2 text-text">What I did</h2>
+        {project.whatIDid.map((paragraph) => <p class="mt-4 text-text-muted">{paragraph}</p>)}
+      </div>
+      <div data-animate="section">
+        <h2 class="text-h2 text-text">What I found</h2>
+        <p class="mt-4 text-text-muted">{project.whatIFound}</p>
+      </div>
+    </div>
+
+    <div data-animate="section" class="mt-12 flex flex-wrap gap-x-6 gap-y-2">
+      <a href={project.repo.href} class="link-accent font-medium" rel="noopener"
+        >{project.repo.label} ↗</a
+      >
+      {
+        project.extraLinks?.map((link) => (
+          <a href={link.href} class="link-accent font-medium" rel="noopener">
+            {link.label} ↗
+          </a>
+        ))
+      }
+    </div>
+
+    <nav aria-label="Project navigation" class="hairline mt-16 flex justify-between gap-4 pt-8">
+      <a href={`/projects/${prev.slug}/`} class="link-quiet text-sm font-medium"
+        >← {prev.name}</a
+      >
+      <a href={`/projects/${next.slug}/`} class="link-quiet text-sm font-medium"
+        >{next.name} →</a
+      >
+    </nav>
+  </article>
+</BaseLayout>

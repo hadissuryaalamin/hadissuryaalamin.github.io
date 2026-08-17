@@ -1,0 +1,149 @@
+---
+// /cv/ — the full CV as a web page (epic.md §5.3), plus the print mechanism
+// (§10). Section order: Summary, Experience, Education, Skills,
+// Achievements, Projects (brief — one line each, linking out per §16 item
+// 8, never duplicating the detail-page paragraphs).
+//
+// Motion: section headings and CV entries use `data-animate="fade"` only (no
+// slide) per epic.md §8.3 — "CV page: fade only, no slide — it is a
+// document." The name/contact/download-button block at the very top is
+// deliberately left un-animated (static, always full opacity) rather than
+// wrapped in a "fade" beat of its own — it's the first thing on the page
+// (and includes the Download CV button's accent-filled text, which needs a
+// strict 4.5:1 contrast a mid-fade opacity blend can't reliably hold — see
+// updates/002.md), so there's no reason to delay it.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Portrait from '../../components/Portrait.astro';
+import { pageMeta } from '../../data/meta';
+import {
+  achievements,
+  cvContact,
+  cvH1,
+  cvSummary,
+  downloadCvLabel,
+  education,
+  experience,
+  skills,
+} from '../../data/cv';
+import { featuredProjects } from '../../data/projects';
+---
+
+<BaseLayout title={pageMeta.cv.title} description={pageMeta.cv.description}>
+  <section class="mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12">
+    <div class="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+      <div>
+        <h1 class="text-display text-text">{cvH1}</h1>
+        <p class="text-meta mt-4 text-text-muted">{cvContact.locationLine}</p>
+        <div class="text-meta mt-4 flex flex-wrap gap-x-6 gap-y-2">
+          <a href={cvContact.emailHref} class="link-accent">{cvContact.email}</a>
+          <a href={cvContact.linkedin} class="link-accent" rel="noopener"
+            >{cvContact.linkedinLabel}</a
+          >
+          <a href={cvContact.github} class="link-accent" rel="noopener">{cvContact.githubLabel}</a
+          >
+        </div>
+        <button type="button" onclick="window.print()" class="btn-primary mt-6" data-print-hide>
+          {downloadCvLabel}
+        </button>
+      </div>
+      <Portrait />
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 pb-16 md:px-8 xl:px-12">
+    <h2 data-animate="fade" class="text-h2 text-text">Summary</h2>
+    <p data-animate="fade" class="prose-measure mt-4 text-text-muted">{cvSummary}</p>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 pb-16 md:px-8 xl:px-12">
+    <h2 data-animate="fade" class="text-h2 text-text">Experience</h2>
+    <ul class="mt-6 flex flex-col gap-8">
+      {
+        experience.map((job) => (
+          <li class="cv-entry hairline pt-6" data-animate="fade">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h3 class="text-h3 text-text">
+                {job.role} · {job.org}
+              </h3>
+              <p class="text-meta text-text-muted">{job.dates}</p>
+            </div>
+            <p class="text-meta mt-1 text-text-muted">{job.location}</p>
+            <ul class="prose-measure mt-3 flex flex-col gap-1 text-text-muted">
+              {job.bullets.map((bullet) => (
+                <li>{bullet}</li>
+              ))}
+            </ul>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 pb-16 md:px-8 xl:px-12">
+    <h2 data-animate="fade" class="text-h2 text-text">Education</h2>
+    <ul class="mt-6 flex flex-col gap-8">
+      {
+        education.map((edu) => (
+          <li class="cv-entry hairline pt-6" data-animate="fade">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h3 class="text-h3 text-text">{edu.institution}</h3>
+              <p class="text-meta text-text-muted">{edu.dates}</p>
+            </div>
+            <p class="text-meta mt-1 text-text-muted">
+              {edu.qualification} · {edu.location}
+            </p>
+            <ul class="prose-measure mt-3 flex flex-col gap-1 text-text-muted">
+              {edu.details.map((detail) => (
+                <li>{detail}</li>
+              ))}
+            </ul>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 pb-16 md:px-8 xl:px-12">
+    <h2 data-animate="fade" class="text-h2 text-text">Skills</h2>
+    <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+      {
+        skills.map((group) => (
+          <div class="cv-entry" data-animate="fade">
+            <h3 class="text-h3 text-text">{group.heading}</h3>
+            <p class="text-meta mt-2 text-text-muted">{group.items.join(' · ')}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 pb-16 md:px-8 xl:px-12">
+    <h2 data-animate="fade" class="text-h2 text-text">Achievements</h2>
+    <ul class="mt-6 flex flex-col gap-4">
+      {
+        achievements.map((achievement) => (
+          <li class="cv-entry flex flex-wrap gap-x-4 gap-y-1" data-animate="fade">
+            <p class="text-meta w-24 shrink-0 text-text-muted">{achievement.date}</p>
+            <p class="prose-measure text-text-muted">{achievement.description}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 pb-16 md:px-8 xl:px-12">
+    <h2 data-animate="fade" class="text-h2 text-text">Projects</h2>
+    <ul class="prose-measure mt-6 flex flex-col gap-3">
+      {
+        featuredProjects.map((project) => (
+          <li class="cv-entry text-text-muted" data-animate="fade">
+            <a href={`/projects/${project.slug}/`} class="link-accent font-medium">
+              {project.name}
+            </a>{' '}
+            — {project.cvOneLiner}
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>

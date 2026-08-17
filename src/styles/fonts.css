@@ -1,0 +1,33 @@
+/*
+ * Self-hosted fonts — epic.md §7.2. Inter 400/600 + JetBrains Mono 400 (three
+ * files total, the maximum permitted). Files live at public/fonts/*.woff2
+ * (Google Fonts' own latin-subset woff2 builds, downloaded once and
+ * committed — no font CDN is hotlinked at runtime, no @fontsource npm
+ * package was available to install for this task, see updates/002.md).
+ * font-display: swap per §7.2; only weights actually used above the fold are
+ * preloaded (see BaseLayout.astro <head>).
+ */
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/inter-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/inter-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-400.woff2') format('woff2');
+}

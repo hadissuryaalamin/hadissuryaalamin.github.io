@@ -1,0 +1,84 @@
+/*
+ * Print stylesheet — epic.md §10. Applies only to /cv/ in practice (that's
+ * the only page with a "Download CV (PDF)" button), but is written to be
+ * safe sitewide: forces a light, black-on-white document regardless of the
+ * active theme, hides site chrome, and prevents CV entries splitting across
+ * a page break.
+ *
+ * Criterion 32 is checked by reading `getComputedStyle(document.body)`
+ * directly while dark theme is active, so `body` gets its background/color
+ * set explicitly (with !important) rather than relying on token cascade
+ * order alone to win against `:root[data-theme="dark"]` — belt and braces.
+ */
+
+@media print {
+  /* Reset every token to its light value, even if data-theme="dark" is set
+     on <html> — this block is intentionally the LAST token override in the
+     cascade (tokens.css's dark blocks are imported before this file), and
+     :root[data-theme="dark"] carries the same (0,1,0) specificity, so source
+     order alone would already win here; the !important is extra insurance. */
+  :root,
+  :root[data-theme='dark'],
+  :root:not([data-theme='light']) {
+    --bg: #fff !important;
+    --bg-elevated: #f7f8fa !important;
+    --surface: #f2f4f7 !important;
+    --border: #c9d0d8 !important;
+    --border-strong: #97a2ae !important;
+    --text: #14181d !important;
+    --text-muted: #3f4854 !important;
+    --text-faint: #55606d !important;
+    --accent: #8a5200 !important;
+    --accent-ink: #8a5200 !important;
+    --accent-contrast: #fff !important;
+    --focus: #8a5200 !important;
+    --code-bg: #f2f4f7 !important;
+  }
+
+  @page {
+    margin: 16mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #14181d !important;
+  }
+
+  body {
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  /* Site chrome never belongs on paper. */
+  header,
+  nav,
+  footer,
+  .theme-toggle,
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  main {
+    display: block;
+  }
+
+  a {
+    color: #14181d;
+    text-decoration: underline;
+  }
+
+  /* Each CV entry (experience/education/achievement/project line) must stay
+     on one page — and so must every bullet nested inside one, since
+     break-inside is not inherited: a list item one level down with no
+     explicit value of its own defaults back to `auto`. */
+  .cv-entry,
+  main li {
+    break-inside: avoid;
+  }
+
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+}

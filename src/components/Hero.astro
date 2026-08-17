@@ -1,0 +1,52 @@
+---
+// Hero (epic.md §5.1a). Order: h1, lead (verbatim §3 headline), meta line,
+// portrait, primary CTA, secondary, tertiary.
+//
+// Motion: the four elements epic.md §8.3 names (h1, lead, meta line, CTA
+// row) drive the on-load stagger — the portrait is deliberately NOT in that
+// inventory, so it renders statically. The primary "Email me" button is
+// deliberately pulled OUT of the animated CTA-row wrapper and always
+// renders at full opacity: it's both the single highest-priority element on
+// the page (no reason to ever delay it) and the one accent-filled control
+// whose text needs a strict 4.5:1 contrast a mid-fade opacity blend can't
+// reliably hold — see updates/002.md. The secondary/tertiary links still
+// fade in together as their own beat. The meta line uses `--text` rather
+// than `--text-muted` for the same reason: it's one of the four elements
+// that MUST animate per epic.md §8.3's hero inventory (h1, lead, meta line,
+// CTA row), so unlike the marginal-contrast meta strips pruned from
+// animation elsewhere, it can't just be left static — `--text` has enough
+// contrast headroom (16-18:1 at rest) to survive being sampled at any
+// point in the fade.
+import { hero } from '../data/site';
+import Portrait from './Portrait.astro';
+---
+
+<section
+  id="hero"
+  data-animate="hero"
+  class="mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12"
+>
+  <h1 data-animate-item class="text-display text-text">{hero.h1}</h1>
+  <p data-animate-item class="text-hero-lead mt-6 text-text">{hero.lead}</p>
+  <p data-animate-item class="text-meta mt-6 text-text">{hero.metaLine}</p>
+
+  <div class="mt-8">
+    <Portrait />
+  </div>
+
+  <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+    <a href={hero.ctaPrimary.href} class="btn-primary">{hero.ctaPrimary.label}</a>
+    <div data-animate-item class="flex flex-wrap items-center gap-x-6 gap-y-4">
+      <a href={hero.ctaSecondary.href} class="link-quiet text-sm font-medium"
+        >{hero.ctaSecondary.label}</a
+      >
+      {
+        hero.ctaTertiary.map((link) => (
+          <a href={link.href} class="link-quiet text-sm font-medium" rel="noopener">
+            {link.label}
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</section>

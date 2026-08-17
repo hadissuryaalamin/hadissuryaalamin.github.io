@@ -24,9 +24,18 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    // Rebuild before preview so `playwright test` is correct standalone too,
+    // Rebuild before serving so `playwright test` is correct standalone too,
     // not just as the tail of `pnpm check` (which already built once).
-    command: `pnpm run build && pnpm exec astro preview --port ${PORT}`,
+    //
+    // Deliberately NOT `astro preview`: this project's Astro version (7.2.2)
+    // turned `astro preview` into a daemon launcher — the command forks a
+    // detached background server and returns almost immediately instead of
+    // blocking, which races against (and often loses to) Playwright's own
+    // "did the webServer process exit early?" check, since Playwright
+    // expects `command` to stay running in the foreground for the life of
+    // the test run. scripts/serve-dist.mjs is a small dependency-free static
+    // server that has no such problem — see its own header comment.
+    command: `pnpm run build && node scripts/serve-dist.mjs ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

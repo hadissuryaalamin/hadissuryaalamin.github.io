@@ -1,0 +1,26 @@
+---
+// /404 (epic.md §5.4) — a real page, not a default fallback. Astro emits
+// this at the dist root as dist/404.html regardless of build.format, which
+// is what GitHub Pages serves for any unmatched route.
+//
+// No motion here deliberately: epic.md §8.3's animation inventory lists
+// exactly four cases (hero, section headings/body, project cards, CV fade)
+// and ends with "Nothing else." — the 404 page isn't one of the four, so it
+// renders in its final state immediately (see updates/002.md).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { notFound } from '../data/site';
+import { pageMeta } from '../data/meta';
+---
+
+<BaseLayout title={pageMeta.notFound.title} description={pageMeta.notFound.description}>
+  <section class="mx-auto max-w-6xl px-6 py-24 text-center md:px-8 xl:px-12">
+    <p class="text-micro text-accent-ink">404</p>
+    <h1 class="text-display mt-2 text-text">{notFound.h1}</h1>
+    <p class="prose-measure mx-auto mt-6 text-text-muted">
+      {notFound.paragraph}
+    </p>
+    <a href={notFound.homeLink.href} class="btn-primary mt-8 inline-flex">
+      {notFound.homeLink.label}
+    </a>
+  </section>
+</BaseLayout>

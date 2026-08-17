@@ -1,23 +1,75 @@
 ---
-import '../styles/global.css';
+// Home page (epic.md §5.1). Sections in order: hero, about, selected
+// projects, other work, contact. This replaces the task-002 placeholder
+// entirely.
+import Hero from '../components/Hero.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { about, contact, identity, otherWorkHeading } from '../data/site';
+import { pageMeta } from '../data/meta';
+import { featuredProjects, otherWork } from '../data/projects';
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Hadis Surya Al Amin</title>
-	</head>
-	<body>
-		<nav>
-			<!-- TODO(002): real nav — Home, Projects, CV, Contact, theme toggle -->
-		</nav>
-		<main>
-			<h1>Hadis Surya Al Amin</h1>
-			<!-- TODO(001/002): scaffold placeholder — replace with the real home page -->
-		</main>
-	</body>
-</html>
+<BaseLayout title={pageMeta.home.title} description={pageMeta.home.description}>
+  <Hero />
+
+  <section class="mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12">
+    <p data-animate="section" class="text-micro text-accent-ink">Background</p>
+    <h2 data-animate="section" class="text-h2 mt-2 text-text">About</h2>
+    <div class="prose-measure mt-6 flex flex-col gap-4">
+      {about.map((paragraph) => <p data-animate="section" class="text-text-muted">{paragraph}</p>)}
+    </div>
+  </section>
+
+  <section id="projects" class="hairline mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12">
+    <p data-animate="section" class="text-micro text-accent-ink">Selected work</p>
+    <h2 data-animate="section" class="text-h2 mt-2 text-text">Projects</h2>
+    <ul data-animate-stagger class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
+      {
+        featuredProjects.map((project) => (
+          <ProjectCard project={project} featured={project.order === 1} />
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="hairline mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12">
+    <h2 data-animate="section" class="text-h2 text-text">{otherWorkHeading}</h2>
+    <ul class="prose-measure mt-6 flex flex-col gap-3">
+      {
+        otherWork.map((item) => (
+          <li data-animate="section" class="text-text-muted">
+            {item.href ? (
+              <a href={item.href} class="link-accent font-medium" rel="noopener">
+                {item.name}
+              </a>
+            ) : (
+              <span class="font-medium text-text">{item.name}</span>
+            )}{' '}
+            — {item.summary}
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section id="contact" class="hairline mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12">
+    <p data-animate="section" class="text-micro text-accent-ink">Get in touch</p>
+    <h2 data-animate="section" class="text-h2 mt-2 text-text">{contact.heading}</h2>
+    <p data-animate="section" class="prose-measure mt-6 text-text-muted">
+      {contact.paragraphPrefix}{' '}
+      <a href={identity.emailHref} class="link-accent font-medium">
+        {contact.emailText}
+      </a>.
+    </p>
+    <p data-animate="section" class="mt-2 text-sm text-text-muted">
+      {contact.paragraphSuffix.replace(/^\.\s*/, '')}{' '}
+      <a href={identity.linkedin} class="link-accent text-sm font-medium" rel="noopener">
+        {contact.linkedinLabel}
+      </a>.
+    </p>
+    <div data-animate="section" class="mt-8">
+      <a href={contact.ctaPrimary.href} class="btn-primary">{contact.ctaPrimary.label}</a>
+    </div>
+  </section>
+</BaseLayout>

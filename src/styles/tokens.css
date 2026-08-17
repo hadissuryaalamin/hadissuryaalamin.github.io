@@ -1,0 +1,82 @@
+/*
+ * Design tokens — epic.md §7.5, §7.6.
+ *
+ * IMPORTANT (read before editing): spec/theme-tokens.test.ts (criterion 40)
+ * statically parses this file's source text for a literal, unqualified
+ * `:root { }` rule containing each token. It is NOT a computed-style check —
+ * it reads the CSS source directly. So:
+ *   1. The COMPLETE light token set lives on a bare `:root { }` below.
+ *   2. The dark-by-system override lives under
+ *      `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { } }`
+ *      so an explicit light choice still wins over the OS.
+ *   3. The dark-by-toggle override lives under `:root[data-theme="dark"] { }`
+ *      so the toggle wins in both directions.
+ * No token may be given its ONLY definition inside step 2 or step 3 — every
+ * token below already has a light value on the bare :root in step 1.
+ *
+ * Do NOT move this block inside Tailwind's `@theme { }` at-rule — that is a
+ * different at-rule name and will not satisfy the criterion-40 source check,
+ * even though Tailwind's compiled output also happens to touch :root.
+ */
+
+:root {
+  --bg: #fff;
+  --bg-elevated: #f7f8fa;
+  --surface: #f2f4f7;
+  --border: #e3e7ec;
+  --border-strong: #c9d0d8;
+  --text: #14181d;
+
+  /* epic.md §7.5's base values (#55606D / #8A5200 / #B26A00) pass AA at rest,
+     but two of them run out of margin once GSAP's entrance fade (§8) is
+     mid-tween — axe can legitimately sample a page a fraction of a second
+     into a 0.45-0.5s opacity animation, and a colour blended partway toward
+     white loses contrast. Darkened per §7.5's own instruction ("if a value
+     fails, darken/lighten it and record the change") to keep a safety
+     margin through that transient, not just at the settled 0/1 states —
+     recorded in full in updates/002.md. --text-faint is unaffected (never
+     used for animated normal-size text — see updates/002.md). */
+  --text-muted: #47515c;
+  --text-faint: #7a8593;
+  --accent: #a05f00;
+  --accent-ink: #774700;
+  --accent-contrast: #fff;
+  --focus: #a05f00;
+  --code-bg: #f2f4f7;
+}
+
+/* System dark preference, unless the visitor explicitly chose light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0b0e11;
+    --bg-elevated: #14181d;
+    --surface: #1b2027;
+    --border: #262c34;
+    --border-strong: #384150;
+    --text: #e8ecf1;
+    --text-muted: #9aa5b1;
+    --text-faint: #6b7683;
+    --accent: #f5a524;
+    --accent-ink: #f7b84b;
+    --accent-contrast: #0b0e11;
+    --focus: #f5a524;
+    --code-bg: #14181d;
+  }
+}
+
+/* Explicit visitor choice via the theme toggle — wins in both directions. */
+:root[data-theme='dark'] {
+  --bg: #0b0e11;
+  --bg-elevated: #14181d;
+  --surface: #1b2027;
+  --border: #262c34;
+  --border-strong: #384150;
+  --text: #e8ecf1;
+  --text-muted: #9aa5b1;
+  --text-faint: #6b7683;
+  --accent: #f5a524;
+  --accent-ink: #f7b84b;
+  --accent-contrast: #0b0e11;
+  --focus: #f5a524;
+  --code-bg: #14181d;
+}

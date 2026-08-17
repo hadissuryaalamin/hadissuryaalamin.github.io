@@ -45,7 +45,12 @@ test("criterion 32: printing /cv/ in dark theme produces a light background and 
 
 test("criterion 33: the portrait is not rendered in print", async ({ page }) => {
   await forceDarkThenPrint(page);
-  const portrait = page.getByRole("img", { name: /Hadis/i });
+  // A plain CSS attribute selector, not getByRole(), because a correctly
+  // display:none image is excluded from the accessibility tree, which would
+  // make a role-based query report zero matches indistinguishably from "no
+  // portrait exists yet" — this needs to find the element specifically so
+  // it can confirm it's hidden, not merely absent.
+  const portrait = page.locator('img[alt*="Hadis" i]');
   if ((await portrait.count()) === 0) {
     test.skip(true, "no portrait <img alt=\"...Hadis...\"> found yet — wait on tasks 001/002/004");
   }

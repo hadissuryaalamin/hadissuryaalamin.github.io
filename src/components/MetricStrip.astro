@@ -1,0 +1,27 @@
+---
+// Metric strip (epic.md §7.3, §16 item 10): numbers large and monospace with
+// tabular figures, each with a plain-language label under it.
+//
+// §16 item 10 (320px behaviour): a single column below 380px so a longer
+// value like "25.62 → 25.18" never has to wrap or overflow its cell; two
+// columns from 380px, three from the sm breakpoint (640px) up. No
+// horizontal scrolling is possible at any width since it's a block grid.
+import type { Metric } from '../data/projects';
+
+interface Props {
+  metrics: Metric[];
+}
+
+const { metrics } = Astro.props;
+---
+
+<dl class="grid grid-cols-1 gap-4 min-[380px]:grid-cols-2 sm:grid-cols-3 sm:gap-6">
+  {
+    metrics.map((metric) => (
+      <div class="flex min-w-0 flex-col-reverse">
+        <dt class="text-meta mt-1 text-text-muted">{metric.label}</dt>
+        <dd class="text-metric break-words text-accent-ink">{metric.value}</dd>
+      </div>
+    ))
+  }
+</dl>

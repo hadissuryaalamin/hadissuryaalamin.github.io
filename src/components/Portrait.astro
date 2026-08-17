@@ -1,0 +1,29 @@
+---
+// The portrait (epic.md §11): tighter head-and-shoulders crop (produced as a
+// committed build asset — src/assets/portrait-cropped.jpg, see
+// updates/002.md for the exact crop box), circular mask, subtle 1px
+// `--border` ring, WebP/AVIF with a JPEG fallback via astro:assets Picture,
+// explicit dimensions, eager + high fetchpriority since it's always
+// above-the-fold (hero or CV page header). Hidden in print via
+// [data-print-hide] (src/styles/print.css).
+import { Picture } from 'astro:assets';
+import portrait from '../assets/portrait-cropped.jpg';
+import { hero } from '../data/site';
+---
+
+<div
+  class="h-40 w-40 shrink-0 overflow-hidden rounded-full border border-border sm:h-48 sm:w-48"
+  data-print-hide
+>
+  <Picture
+    src={portrait}
+    alt={hero.portraitAlt}
+    formats={['avif', 'webp']}
+    fallbackFormat="jpeg"
+    width={480}
+    height={480}
+    loading="eager"
+    fetchpriority="high"
+    class="h-full w-full object-cover"
+  />
+</div>
