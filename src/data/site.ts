@@ -77,7 +77,7 @@ export const hero = {
 export const about: string[] = [
   "I'm a Master of Machine Learning and Computer Vision student at the Australian National University, graduating in December 2026 on an LPDP scholarship from the Indonesian government.",
   'Before Canberra I spent four years as an engineer in Indonesian industry — designing radar control boards and low-noise amplifiers at PT Radar Telekomunikasi, modifying PLC logic and writing .NET automation on the production line at Schneider Electric, and leading the team that took a hospital nurse-call system from PCB design to installed product.',
-  "Now I build the software side of the same problem: perception, generative and reinforcement-learning models in PyTorch, and the ROS2 systems that carry them. I'm based in Canberra and open to relocating, including to Singapore.",
+  "Now I build the software side of the same problem: perception, generative and reinforcement-learning models in PyTorch, and the ROS2 systems that carry them. I'm based in Canberra and open to relocating.",
 ];
 
 /** Contact section (epic §5.1e). Email must render as visible copyable text, not just a link. */

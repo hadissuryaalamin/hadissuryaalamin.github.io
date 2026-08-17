@@ -136,7 +136,7 @@ export const education: EducationEntry[] = [
     institution: 'Australian National University',
     qualification: 'Master of Machine Learning and Computer Vision',
     location: 'Canberra, Australia',
-    dates: 'Feb 2025 – expected Dec 2026',
+    dates: 'Feb 2025 – Dec 2026',
     details: [
       'LPDP (Indonesia Government) scholarship awardee.',
       'Coursework across computer vision, deep learning, and advanced ML topics.',
