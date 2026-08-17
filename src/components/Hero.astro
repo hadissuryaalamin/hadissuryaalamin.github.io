@@ -2,6 +2,41 @@
 // Hero (epic.md §5.1a). Order: h1, lead (verbatim §3 headline), meta line,
 // portrait, primary CTA, secondary, tertiary.
 //
+// Layout: a single-column stack below `xl`, a two-column grid at `xl` and up
+// with the text in column 1 and the portrait alone in column 2. Before this,
+// every child was a full-width block in a 1152px container while the lead is
+// capped at a 46ch measure — so on a 1440px viewport the text stopped ~360px
+// short of the container's right edge and the portrait sat underneath it,
+// leaving the whole right side of the hero visibly empty.
+//
+// The DOM order above is preserved exactly (it's the §5.1a requirement, and
+// motion.ts's `animateHero` collects `[data-animate-item]` by document order,
+// so the stagger sequence depends on it). Rather than wrapping the text in a
+// column div — which would force the portrait after the CTA row and change
+// both the documented order and the mobile stack — each child is placed
+// explicitly by grid line: text at `col-start-1` rows 1-4, portrait at
+// `col-start-2` spanning those rows so it can `self-center` against the full
+// text block. Only `gap-x` is set; the existing `mt-6`/`mt-8` margins still
+// own the vertical rhythm, which is why the portrait needs `xl:mt-0`.
+//
+// Column 2 is `auto`, so the portrait's own width plus `gap-x-12` is what
+// column 1 gives up — and the meta line is the binding constraint on that
+// budget. At `xl` the content box is 1056px (max-w-6xl minus `xl:px-12`) and
+// the meta line needs 790px to stay on one line, so column 1 must keep ~790px
+// and the portrait + gap can't exceed ~266px. The default 192px portrait plus
+// the 48px gap leaves column 1 at 816px, i.e. 26px of slack. That's why the
+// portrait is NOT enlarged here and why there's no wider `xl` gap: both were
+// tried, and either one pushes "…Machine Learning and Computer | Vision, ANU"
+// onto a second line, splitting the degree name mid-phrase.
+//
+// That budget is also why the grid starts at `xl` (1280px) rather than `lg`
+// (1024px). In the 1024-1279px band the content box is only ~960px, so a
+// side-by-side 192px portrait leaves column 1 at ~722px and the meta line
+// wraps no matter how the gap is tuned — a regression, since that band renders
+// it on one line today. Keeping those widths stacked means no width loses
+// anything, and `xl` still covers every common laptop (1366, 1440, 1536,
+// 1920); what stays stacked is tablet-landscape, where a stack is right anyway.
+//
 // Motion: the four elements epic.md §8.3 names (h1, lead, meta line, CTA
 // row) drive the on-load stagger — the portrait is deliberately NOT in that
 // inventory, so it renders statically. The primary "Email me" button is
@@ -24,17 +59,23 @@ import Portrait from './Portrait.astro';
 <section
   id="hero"
   data-animate="hero"
-  class="mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12"
+  class="mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:grid xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start xl:gap-x-12 xl:px-12"
 >
-  <h1 data-animate-item class="text-display text-text">{hero.h1}</h1>
-  <p data-animate-item class="text-hero-lead mt-6 text-text">{hero.lead}</p>
-  <p data-animate-item class="text-meta mt-6 text-text">{hero.metaLine}</p>
+  <h1 data-animate-item class="text-display text-text xl:col-start-1 xl:row-start-1">{hero.h1}</h1>
+  <p data-animate-item class="text-hero-lead mt-6 text-text xl:col-start-1 xl:row-start-2">
+    {hero.lead}
+  </p>
+  <p data-animate-item class="text-meta mt-6 text-text xl:col-start-1 xl:row-start-3">
+    {hero.metaLine}
+  </p>
 
-  <div class="mt-8">
+  <div class="mt-8 xl:col-start-2 xl:row-span-4 xl:row-start-1 xl:mt-0 xl:self-center xl:justify-self-end">
     <Portrait />
   </div>
 
-  <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+  <div
+    class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4 xl:col-start-1 xl:row-start-4"
+  >
     <a href={hero.ctaPrimary.href} class="btn-primary">{hero.ctaPrimary.label}</a>
     <div data-animate-item class="flex flex-wrap items-center gap-x-6 gap-y-4">
       <a href={hero.ctaSecondary.href} class="link-quiet text-sm font-medium"
