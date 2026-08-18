@@ -6,21 +6,85 @@
 // value like "25.62 → 25.18" never has to wrap or overflow its cell; two
 // columns from 380px, three from the sm breakpoint (640px) up. No
 // horizontal scrolling is possible at any width since it's a block grid.
+//
+// Alignment: below `sm` each cell stays its own `flex-col-reverse` — a
+// definition list requires the term before the description in source, and the
+// reverse paints the label under the value. From `sm` up, where the cells sit
+// side by side, that per-cell flex is exactly what made the strip look ragged:
+// each cell bottom-packs independently, so a two-line label pushed its own
+// value upward and no two values in a row shared a baseline (measured on the
+// live page: value bottoms 2076 vs 2097, label tops 2080 vs 2101 inside one
+// card). So from `sm` the cells become row subgrids spanning the list's two
+// tracks — every value shares track 1, every label shares track 2. Values are
+// `self-end` so they settle onto one common baseline; labels all start at one
+// common y. Labels may still run to different depths, which is fine: only
+// their top edge has to agree.
+//
+// The subgrid only applies while every cell fits in ONE band — at most 3
+// metrics across 3 columns. With 4, which some detail pages pass, there'd be a
+// second band, and a single `row-gap` would have to serve both the
+// value-to-label step (~4px) and the band-to-band step (~24px). Those want very
+// different numbers, so multi-band strips keep the plain flex behaviour and
+// their original `gap-6`.
 import type { Metric } from '../data/projects';
 
+// `compact`: home-page cards sit in a half-width grid column, which leaves
+// each metric cell about 134px wide. At the full `text-metric` size (36px
+// mono, ~6 characters per line) a delta value like "25.62 → 25.18" can't
+// render in fewer than three lines. `compact` steps the size down so it holds
+// in two. Detail pages have the room and keep the full size.
+//
+// Gotcha worth knowing before editing the comments above: keep a bare opening
+// angle bracket out of this frontmatter, even inside a `//` comment. One is
+// enough to make the compiler's TSX transform lose the `Props` interface —
+// `Astro.props` then quietly falls back to a string-keyed any-record, `metrics`
+// becomes `any`, and the only symptom is an implicit-any error on the `.map`
+// callback far below, pointing nowhere near the actual cause. Write element
+// names as prose ("a definition list", not the tag) and spell comparisons out
+// ("at most 3", not the operator).
 interface Props {
   metrics: Metric[];
+  compact?: boolean;
 }
 
-const { metrics } = Astro.props;
+const { metrics, compact = false } = Astro.props;
+
+// One band of cells is the precondition for sharing row tracks.
+const singleBand = metrics.length <= 3;
+
+// Bind the arrow to the value in front of it with a non-breaking space, so a
+// delta has exactly one place it can break — after the arrow ("25.62 →" /
+// "25.18"). Left to normal spaces it breaks on both sides and strands the
+// arrow alone on the middle line, which is what produced three-line cells.
+const displayValue = (value: string): string => value.replace(/\s*→\s*/, ' → ');
 ---
 
-<dl class="grid grid-cols-1 gap-4 min-[380px]:grid-cols-2 sm:grid-cols-3 sm:gap-6">
+<dl
+  class:list={[
+    'grid grid-cols-1 gap-4 min-[380px]:grid-cols-2 sm:grid-cols-3',
+    singleBand ? 'sm:grid-rows-[auto_auto] sm:gap-x-6 sm:gap-y-1' : 'sm:gap-6',
+  ]}
+>
   {
     metrics.map((metric) => (
-      <div class="flex min-w-0 flex-col-reverse">
-        <dt class="text-meta mt-1 text-text-muted">{metric.label}</dt>
-        <dd class="text-metric break-words text-accent-ink">{metric.value}</dd>
+      <div
+        class:list={[
+          'flex min-w-0 flex-col-reverse',
+          singleBand && 'sm:row-span-2 sm:grid sm:grid-rows-subgrid',
+        ]}
+      >
+        <dt class:list={['text-meta mt-1 text-text-muted', singleBand && 'sm:row-start-2 sm:mt-0']}>
+          {metric.label}
+        </dt>
+        <dd
+          class:list={[
+            compact ? 'text-metric-compact' : 'text-metric',
+            'break-words text-accent-ink',
+            singleBand && 'sm:row-start-1 sm:self-end',
+          ]}
+        >
+          {displayValue(metric.value)}
+        </dd>
       </div>
     ))
   }

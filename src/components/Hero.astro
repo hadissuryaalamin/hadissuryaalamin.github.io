@@ -3,7 +3,7 @@
 // portrait, primary CTA, secondary, tertiary.
 //
 // Layout: a single-column stack below `xl`, a two-column grid at `xl` and up
-// with the text in column 1 and the portrait alone in column 2. Before this,
+// with the portrait alone in column 1 and the text in column 2. Before this,
 // every child was a full-width block in a 1152px container while the lead is
 // capped at a 46ch measure — so on a 1440px viewport the text stopped ~360px
 // short of the container's right edge and the portrait sat underneath it,
@@ -14,9 +14,12 @@
 // so the stagger sequence depends on it). Rather than wrapping the text in a
 // column div — which would force the portrait after the CTA row and change
 // both the documented order and the mobile stack — each child is placed
-// explicitly by grid line: text at `col-start-1` rows 1-4, portrait at
-// `col-start-2` spanning those rows so it can `self-center` against the full
-// text block. Only `gap-x` is set; the existing `mt-6`/`mt-8` margins still
+// explicitly by grid line: text at `col-start-2` rows 1-4, portrait at
+// `col-start-1` spanning those rows so it can `self-center` against the full
+// text block. That placement is also what lets the portrait render to the
+// LEFT of the text while still sitting fourth in the DOM, so the visual order
+// is portrait-then-text without touching the §5.1a source order or the
+// stagger sequence. Only `gap-x` is set; the existing `mt-6`/`mt-8` margins still
 // own the vertical rhythm, which is why the portrait needs `xl:mt-0`.
 //
 // Column 2 is `auto`, so the portrait's own width plus `gap-x-12` is what
@@ -59,22 +62,22 @@ import Portrait from './Portrait.astro';
 <section
   id="hero"
   data-animate="hero"
-  class="mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:grid xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start xl:gap-x-12 xl:px-12"
+  class="mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:grid xl:grid-cols-[auto_minmax(0,1fr)] xl:items-start xl:gap-x-12 xl:px-12"
 >
-  <h1 data-animate-item class="text-display text-text xl:col-start-1 xl:row-start-1">{hero.h1}</h1>
-  <p data-animate-item class="text-hero-lead mt-6 text-text xl:col-start-1 xl:row-start-2">
+  <h1 data-animate-item class="text-display text-text xl:col-start-2 xl:row-start-1">{hero.h1}</h1>
+  <p data-animate-item class="text-hero-lead mt-6 text-text xl:col-start-2 xl:row-start-2">
     {hero.lead}
   </p>
-  <p data-animate-item class="text-meta mt-6 text-text xl:col-start-1 xl:row-start-3">
+  <p data-animate-item class="text-meta mt-6 text-text xl:col-start-2 xl:row-start-3">
     {hero.metaLine}
   </p>
 
-  <div class="mt-8 xl:col-start-2 xl:row-span-4 xl:row-start-1 xl:mt-0 xl:self-center xl:justify-self-end">
+  <div class="mt-8 xl:col-start-1 xl:row-span-4 xl:row-start-1 xl:mt-0 xl:self-center xl:justify-self-start">
     <Portrait />
   </div>
 
   <div
-    class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4 xl:col-start-1 xl:row-start-4"
+    class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4 xl:col-start-2 xl:row-start-4"
   >
     <a href={hero.ctaPrimary.href} class="btn-primary">{hero.ctaPrimary.label}</a>
     <div data-animate-item class="flex flex-wrap items-center gap-x-6 gap-y-4">

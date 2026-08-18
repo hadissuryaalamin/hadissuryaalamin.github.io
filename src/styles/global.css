@@ -157,6 +157,20 @@ picture {
   font-variant-numeric: tabular-nums;
 }
 
+/* Same role as .text-metric, one step down, for metric strips inside a
+ * half-width home-page card. .text-metric sizes off the VIEWPORT (3vw), so a
+ * card in a two-column grid gets the same 36px as a full-width container while
+ * its cells are only ~134px — about six monospace characters. A delta value
+ * like "25.62 → 25.18" then needs three lines. At this step it fits in two. */
+.text-metric-compact {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: clamp(1.375rem, 2.2vw, 1.875rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
 .text-meta {
   font-family: var(--font-mono);
   font-weight: 400;
@@ -174,8 +188,19 @@ picture {
   text-transform: uppercase;
 }
 
+/* Reading measure for body prose. Widened from 68ch on request: at 68ch the
+ * capped sections (About, Other work, Contact, and the CV/detail pages) ran to
+ * ~713px inside a 1056px content box, so they stopped ~330px short of the right
+ * edge while the uncapped Projects grid filled it — the sections read as
+ * misaligned with each other. 90ch lands at ~944px and closes most of that,
+ * leaving ~112px. It is deliberately past the 45-75ch comfort range: the client
+ * chose the wider measure over restructuring the sections, with the trade-off
+ * stated. Home-page card summaries also carry this class: in a half-width card
+ * the column is only ~452px so the cap never binds, but the full-width featured
+ * card has ~992px of inner width and was bound — its summary now sets two lines
+ * instead of three. */
 .prose-measure {
-  max-width: 68ch;
+  max-width: 90ch;
 }
 
 /* ---------------------------------------------------------------------- *

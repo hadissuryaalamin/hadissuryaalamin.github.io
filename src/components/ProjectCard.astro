@@ -19,6 +19,19 @@
 // Carries `data-animate="card"` per src/scripts/motion.ts's contract — must
 // be nested inside a `[data-animate-stagger]` ancestor (the <ul> in
 // ProjectsSection) to actually animate.
+//
+// The card is a flex column with the metric strip on `mt-auto`, so the strip
+// and the stack line under it are pinned to the bottom of the card rather than
+// floating directly under a summary whose length varies per project. Cards in
+// the same grid row stretch to a shared height, so pinning makes those lower
+// bands line up between neighbours instead of starting at two different
+// heights (measured before: strips began at y=1978 and y=2005 in one row).
+// `pt-6` rather than `mt-6` because `mt-auto` would override the margin, and
+// the 24px minimum gap after the summary still has to hold on the tallest card
+// where there's no slack left for `auto` to distribute.
+//
+// `compact` on the strip: see MetricStrip's own note — a half-width card's
+// cells are too narrow for the full metric size.
 import type { FeaturedProject } from '../data/projects';
 import MetricStrip from './MetricStrip.astro';
 
@@ -33,7 +46,7 @@ const { project, featured = false } = Astro.props;
 <li
   data-animate="card"
   class:list={[
-    'relative rounded-lg border border-border bg-bg-elevated p-6 transition-colors hover:border-border-strong md:p-8',
+    'relative flex flex-col rounded-lg border border-border bg-bg-elevated p-6 transition-colors hover:border-border-strong md:p-8',
     { 'md:col-span-2': featured },
   ]}
 >
@@ -50,8 +63,8 @@ const { project, featured = false } = Astro.props;
     }
   </div>
   <p class="prose-measure mt-3 text-text-muted">{project.cardSummary}</p>
-  <div class="mt-6">
-    <MetricStrip metrics={project.cardMetrics} />
+  <div class="mt-auto pt-6">
+    <MetricStrip metrics={project.cardMetrics} compact />
   </div>
   <p class="text-meta mt-6 text-text-muted">{project.stack.join(' · ')}</p>
 </li>
