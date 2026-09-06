@@ -1,13 +1,28 @@
 ---
 // Home page (epic.md §5.1). Sections in order: hero, about, selected
-// projects, other work, contact. This replaces the task-002 placeholder
-// entirely.
+// projects, other work, feed, contact. This replaces the task-002
+// placeholder entirely.
+//
+// The feed teaser sits between other work and contact so the page reads
+// "selected work → other work → what I'm doing now → get in touch".
+//
+// Note buildPortfolioFeed, not buildFeed: this page is the portfolio, and
+// coursework repos are kept off it (epic criterion 24, enforced by
+// spec/content.test.ts). /feed/ shows the unfiltered list. See
+// portfolioHiddenRepoPatterns in src/data/feed.ts for the reasoning.
+//
+// The GitHub request happens at build time — see src/lib/github.ts for the
+// contract that an outage empties the section rather than failing the build.
 import Hero from '../components/Hero.astro';
+import FeedList from '../components/FeedList.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { about, contact, identity, otherWorkHeading } from '../data/site';
+import { about, contact, feed, identity, otherWorkHeading } from '../data/site';
 import { pageMeta } from '../data/meta';
 import { featuredProjects, otherWork } from '../data/projects';
+import { buildPortfolioFeed } from '../lib/feed';
+
+const feedTeaser = await buildPortfolioFeed(5);
 ---
 
 <BaseLayout title={pageMeta.home.title} description={pageMeta.home.description}>
@@ -52,6 +67,25 @@ import { featuredProjects, otherWork } from '../data/projects';
       }
     </ul>
   </section>
+
+  {
+    feedTeaser.length > 0 && (
+      <section id="feed" class="hairline mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12">
+        <p data-animate="section" class="text-micro text-accent-ink">
+          {feed.eyebrow}
+        </p>
+        <h2 data-animate="section" class="text-h2 mt-2 text-text">
+          {feed.heading}
+        </h2>
+        <FeedList items={feedTeaser} />
+        <div data-animate="section" class="mt-8">
+          <a href="/feed/" class="link-quiet text-sm font-medium">
+            {feed.viewAllLabel}
+          </a>
+        </div>
+      </section>
+    )
+  }
 
   <section id="contact" class="hairline mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12">
     <p data-animate="section" class="text-micro text-accent-ink">Get in touch</p>

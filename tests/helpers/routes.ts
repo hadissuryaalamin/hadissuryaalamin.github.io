@@ -6,6 +6,7 @@
 export const ROUTES = [
   "/",
   "/cv/",
+  "/feed/",
   "/projects/dishpatch/",
   "/projects/gpt2-from-scratch/",
   "/projects/deep-learning-statistical-arbitrage/",

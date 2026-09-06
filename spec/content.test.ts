@@ -271,10 +271,25 @@ describe("criterion 22b: gpt2-from-scratch credits karpathy/nanoGPT and links th
   });
 });
 
-describe("criterion 24: no COMP4020 web-dev prototype mentioned or linked anywhere", () => {
+describe("criterion 24: no COMP4020 web-dev prototype mentioned or linked on the portfolio pages", () => {
+  // Scoped to the portfolio — every page except /feed/.
+  //
+  // The criterion exists to keep coursework prototypes out of the work a
+  // recruiter reads: the home page, the CV, the project pages. /feed/ is a
+  // different kind of page, added later — an activity log whose whole point is
+  // "here is what I have actually been pushing", coursework included, with
+  // anyone wanting detail sent to GitHub. The home page's teaser is filtered
+  // accordingly (portfolioHiddenRepoPatterns in src/data/feed.ts), so the
+  // portfolio itself still satisfies the original criterion.
+  const portfolioPages = pages.filter(({ name }) => !name.startsWith("feed/"));
+
+  it("found portfolio pages to check (guards against the filter matching everything)", () => {
+    expect(portfolioPages.length).toBeGreaterThan(0);
+  });
+
   for (const term of EXCLUDED_COMP4020_PROTOTYPES) {
-    it(`"${term}" does not appear on any page`, () => {
-      for (const { name, doc } of pages) {
+    it(`"${term}" does not appear on any portfolio page`, () => {
+      for (const { name, doc } of portfolioPages) {
         expect(textOf(doc), `found "${term}" on ${name}`).not.toMatch(new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
       }
     });
