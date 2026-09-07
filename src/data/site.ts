@@ -44,6 +44,7 @@ export const nav: LinkItem[] = [
   { label: 'Home', href: '/' },
   { label: 'Projects', href: '/#projects' },
   { label: 'CV', href: '/cv/' },
+  { label: 'Feed', href: '/feed/' },
   { label: 'Contact', href: 'mailto:hadisssurya@gmail.com' },
 ];
 
@@ -95,6 +96,26 @@ export const footer = {
   name: identity.fullName,
   repoLink: { label: 'Source on GitHub', href: identity.siteRepo } as LinkItem,
 };
+
+/**
+ * Activity feed (/feed/, plus a capped teaser on the home page). The entries
+ * themselves are half hand-written (src/data/feed.ts) and half fetched from
+ * GitHub at build time (src/lib/github.ts); this is only the surrounding copy.
+ */
+export const feed = {
+  eyebrow: 'Recent activity',
+  h1: 'Feed',
+  heading: 'Feed',
+  intro:
+    'Recent public commits, pulled automatically when this site rebuilds, alongside the occasional note about what I am working on.',
+  /**
+   * Shown when the feed has nothing in it — which in practice means the
+   * GitHub API was unreachable at build time and there are no notes to fall
+   * back on. Deliberately does not blame the visitor or imply a broken page.
+   */
+  emptyState: 'Nothing here at the moment. Recent commits will appear the next time this site rebuilds.',
+  viewAllLabel: 'View the full feed',
+} as const;
 
 /** Other-work section heading (epic §5.1d, Phase 3). Items themselves live in projects.ts. */
 export const otherWorkHeading = 'Other work';

@@ -1,0 +1,77 @@
+---
+// Renders the activity feed (src/lib/feed.ts) — commits pulled from GitHub at
+// build time, interleaved with hand-written notes from src/data/feed.ts.
+//
+// Used twice: a capped teaser on the home page and the full list at /feed/.
+// The only difference between the two is how many items get passed in, so
+// this component takes an already-built, already-sorted array rather than
+// calling buildFeed() itself. That keeps the network call to one per page.
+//
+// Carries the `data-animate="card"` / `[data-animate-stagger]` pair per
+// src/scripts/motion.ts's contract — cards only animate inside a stagger
+// container, and the epic's §8.3 list allows no fifth animation case, so the
+// feed reuses the existing card behaviour rather than inventing one.
+//
+// The <time> elements here are the first on the site; everywhere else dates
+// are pre-formatted display strings that are never parsed (see the note at
+// the top of src/data/feed.ts). Displayed text stays in the site's usual
+// 'Sep 2026' shape, with the machine-readable value in `datetime`.
+import type { FeedItem } from '../lib/feed';
+import { feedDateAttribute, formatFeedDate } from '../lib/feed';
+
+interface Props {
+  items: FeedItem[];
+}
+
+const { items } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <ul data-animate-stagger class="mt-10 flex flex-col gap-4">
+      {items.map((item) => (
+        <li
+          data-animate="card"
+          class="rounded-lg border border-border bg-bg-elevated p-5 transition-colors hover:border-border-strong md:p-6"
+        >
+          {/*
+            `min-w-0` + `break-words` on the repo line: a flex item defaults to
+            min-width:auto, so a long unbroken name like
+            "hadissuryaalamin/hadissuryaalamin.github.io" refuses to shrink and
+            pushes the whole page wider than the viewport (measured: 406px
+            against a 320px screen, tests/layout.spec.ts criterion 51).
+            MetricStrip solves the same problem the same way.
+          */}
+          <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <p class="text-micro min-w-0 break-words text-accent-ink">
+              {item.kind === 'commit' ? item.repo : 'Note'}
+            </p>
+            <time datetime={feedDateAttribute(item.date)} class="text-meta shrink-0 text-text-muted">
+              {formatFeedDate(item.date)}
+            </time>
+          </div>
+
+          {item.kind === 'commit' ? (
+            <p class="prose-measure mt-2 break-words text-text">
+              <a href={item.url} class="link-accent" rel="noopener">
+                {item.message}
+              </a>
+            </p>
+          ) : (
+            <p class="prose-measure mt-2 break-words text-text-muted">
+              {item.text}
+              {item.link && (
+                <>
+                  {' '}
+                  <a href={item.link.href} class="link-accent font-medium" rel="noopener">
+                    {item.link.label}
+                  </a>
+                </>
+              )}
+            </p>
+          )}
+        </li>
+      ))}
+    </ul>
+  )
+}

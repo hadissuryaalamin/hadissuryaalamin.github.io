@@ -1,0 +1,111 @@
+---
+// /feed/ and /feed/2/, /feed/3/, … — the activity feed, paginated.
+//
+// A rest parameter (`[...page]`) rather than `[page]`: it lets page 1 live at
+// the bare /feed/ rather than /feed/1/, which is the URL the nav and the home
+// page teaser link to.
+//
+// The GitHub request happens here, at build time, on the machine running the
+// build — never in a visitor's browser. Astro calls getStaticPaths once per
+// build regardless of how many pages come out of it, so the whole feed costs
+// the same handful of API requests whether it is one page or twenty. See
+// src/lib/github.ts for the contract that an outage empties the feed rather
+// than failing the build.
+import type { GetStaticPaths, Page } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FeedList from '../../components/FeedList.astro';
+import { pageMeta } from '../../data/meta';
+import { feed } from '../../data/site';
+import { feedPageSize } from '../../data/feed';
+import { buildFeed, type FeedItem } from '../../lib/feed';
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const items = await buildFeed();
+  // paginate() emits no routes at all for an empty array, which would leave
+  // /feed/ a 404 — and the nav links to it unconditionally. One empty page
+  // keeps the route alive; the template renders the empty state.
+  if (items.length === 0) {
+    return [{ params: { page: undefined }, props: { page: undefined } }];
+  }
+  return paginate(items, { pageSize: feedPageSize });
+}) satisfies GetStaticPaths;
+
+interface Props {
+  page?: Page<FeedItem>;
+}
+
+const { page } = Astro.props;
+const items = page?.data ?? [];
+
+// Page 2 and beyond say so in the <title>, so a browser's history and a
+// search engine's results don't show a row of identical entries.
+const title =
+  page && page.currentPage > 1
+    ? `${pageMeta.feed.title} — page ${page.currentPage}`
+    : pageMeta.feed.title;
+---
+
+<BaseLayout title={title} description={pageMeta.feed.description}>
+  <section class="mx-auto max-w-6xl px-6 py-16 md:px-8 md:py-24 xl:px-12">
+    <p data-animate="section" class="text-micro text-accent-ink">{feed.eyebrow}</p>
+    <h1 data-animate="section" class="text-display mt-2 text-text">{feed.h1}</h1>
+    <p data-animate="section" class="prose-measure mt-6 text-text-muted">{feed.intro}</p>
+
+    <FeedList items={items} />
+
+    {
+      items.length === 0 && (
+        <p data-animate="section" class="prose-measure mt-10 text-text-muted">
+          {feed.emptyState}
+        </p>
+      )
+    }
+
+    {
+      page && page.lastPage > 1 && (
+        <nav
+          data-animate="section"
+          aria-label="Feed pages"
+          class="mt-12 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3"
+        >
+          {/*
+            Order matters here: previous, then position, then next, so the
+            reading order a screen reader announces matches the visual one.
+
+            At each end of the range the control becomes an inert <span>
+            rather than vanishing, so the row keeps its shape between pages.
+            No `opacity` on that span: dimming text-text-muted took contrast
+            to 2.76:1 against the dark background, well under the 4.5:1 axe
+            enforces (tests/accessibility.spec.ts, criteria 45-46). The
+            unavailable state is carried by the missing link affordance and
+            aria-hidden instead, which costs a sighted reader nothing and
+            keeps the text readable.
+          */}
+          {page.url.prev ? (
+            <a href={page.url.prev} class="link-quiet text-sm font-medium">
+              ← Newer
+            </a>
+          ) : (
+            <span aria-hidden="true" class="text-sm font-medium text-text-muted">
+              ← Newer
+            </span>
+          )}
+
+          <p class="text-meta text-text-muted">
+            Page {page.currentPage} of {page.lastPage}
+          </p>
+
+          {page.url.next ? (
+            <a href={page.url.next} class="link-quiet text-sm font-medium">
+              Older →
+            </a>
+          ) : (
+            <span aria-hidden="true" class="text-sm font-medium text-text-muted">
+              Older →
+            </span>
+          )}
+        </nav>
+      )
+    }
+  </section>
+</BaseLayout>

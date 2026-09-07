@@ -28,7 +28,7 @@ export const siteMetaDefaults = {
   ogImageAlt: 'Hadis Surya Al Amin — Machine Learning and Computer Vision Engineer',
 };
 
-export const pageMeta: Record<'home' | 'cv' | 'notFound', PageMeta> = {
+export const pageMeta: Record<'home' | 'cv' | 'feed' | 'notFound', PageMeta> = {
   home: {
     title: 'Hadis Surya Al Amin — Machine Learning & Computer Vision Engineer',
     description:
@@ -38,6 +38,11 @@ export const pageMeta: Record<'home' | 'cv' | 'notFound', PageMeta> = {
     title: 'CV — Hadis Surya Al Amin',
     description:
       'Full CV for Hadis Surya Al Amin: experience, education, skills and achievements. Master of Machine Learning and Computer Vision student at ANU.',
+  },
+  feed: {
+    title: 'Feed — Hadis Surya Al Amin',
+    description:
+      'Recent public commits and working notes from Hadis Surya Al Amin, updated automatically each time the site rebuilds.',
   },
   notFound: {
     title: 'Page not found — Hadis Surya Al Amin',

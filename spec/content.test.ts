@@ -272,6 +272,10 @@ describe("criterion 22b: gpt2-from-scratch credits karpathy/nanoGPT and links th
 });
 
 describe("criterion 24: no COMP4020 web-dev prototype mentioned or linked anywhere", () => {
+  // Note for anyone adding a feature that pulls in outside content: the
+  // activity feed (/feed/) draws commits from every public repo, so it
+  // excludes coursework repositories by name — see excludedRepoPatterns in
+  // src/data/feed.ts. Without that filter this criterion fails here.
   for (const term of EXCLUDED_COMP4020_PROTOTYPES) {
     it(`"${term}" does not appear on any page`, () => {
       for (const { name, doc } of pages) {

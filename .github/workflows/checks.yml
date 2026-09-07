@@ -13,6 +13,20 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # The activity feed (src/lib/github.ts) is fetched at BUILD time, so it only
+  # refreshes when the site rebuilds. Without this, a commit pushed to some
+  # other repo would not reach the feed until the next push to *this* one.
+  #
+  # 20:00 UTC is 06:00 Canberra (AEST, UTC+10). A scheduled run skips the
+  # `check` job and goes straight to build+deploy — see the deploy job's
+  # condition below for why that is safe and what it buys.
+  #
+  # NOTE: GitHub disables scheduled workflows after 60 days with no repository
+  # activity. If this site goes quiet for two months the feed silently stops
+  # refreshing, and the schedule has to be re-enabled by hand in the Actions
+  # tab.
+  schedule:
+    - cron: '0 20 * * *'
 
 # Allow the deploy job to publish to GitHub Pages.
 concurrency:
@@ -25,7 +39,13 @@ jobs:
     # §15 item 5 asks it stay that way at launch): private-phase pushes would
     # drain the org's shared free Actions pool, and `pnpm check` runs the
     # same checks locally while building anyway.
-    if: ${{ !github.event.repository.private }}
+    #
+    # Scheduled runs skip this job. A cron rebuild exists only to refresh the
+    # feed's data — the committed source is byte-identical to the last push,
+    # which already passed the full suite. Re-running Playwright and the
+    # network-dependent link checks 365 times a year to prove that again would
+    # burn runner time and add a daily chance of a flake blocking the deploy.
+    if: ${{ !github.event.repository.private && github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -44,12 +64,26 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Typecheck, build, lint, and run the full spec (criteria 1-2, 6-51)
         run: pnpm check
+        env:
+          # Raises the feed's GitHub search quota from 10/min to 30/min. Its
+          # absence only degrades the feed to notes; it never fails a build.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
     needs: check
     # Pages can't serve a private repo on the free org anyway; the visibility
     # condition keeps a private-phase run from failing confusingly here.
-    if: ${{ !github.event.repository.private && github.ref == 'refs/heads/main' }}
+    #
+    # `always()` is required because `needs: check` otherwise skips this job
+    # whenever check is skipped, which is exactly what a scheduled run does.
+    # The explicit failure/cancellation guards put back what `needs` normally
+    # gives us: a genuinely broken push still never reaches production.
+    if: >-
+      ${{ always()
+          && !github.event.repository.private
+          && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+          && needs.check.result != 'failure'
+          && needs.check.result != 'cancelled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -68,6 +102,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+        env:
+          # The feed's data is fetched here, at build time. See the check job.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
