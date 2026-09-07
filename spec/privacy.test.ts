@@ -19,7 +19,21 @@ const REPO_ROOT = resolve(".");
 // Directories we never walk: VCS internals, dependencies, generated caches,
 // and the dist/_astro bundle directory (content-hashed build assets — a
 // "known-safe context" for long digit runs per criterion 27's own wording).
-const EXCLUDED_DIRS = new Set(["node_modules", ".git", ".astro", "_astro", ".vscode"]);
+//
+// test-results/ and playwright-report/ are the same kind of thing: generated,
+// gitignored, and full of timestamps. This walker deliberately scans the
+// working tree rather than git's index, so it sees them unless they are named
+// here — and a run ID in test-results/.last-run.json is enough to fail this
+// spec for reasons that have nothing to do with anyone's phone number.
+const EXCLUDED_DIRS = new Set([
+  "node_modules",
+  ".git",
+  ".astro",
+  "_astro",
+  ".vscode",
+  "test-results",
+  "playwright-report",
+]);
 
 // Known-safe files (lockfiles) and binary-ish extensions we don't text-scan.
 const EXCLUDED_FILES = new Set(["pnpm-lock.yaml", "package-lock.json", "yarn.lock"]);

@@ -11,7 +11,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { commitItemsFromSearch, fetchCommitItems, fetchCommitSearch } from "../src/lib/github.ts";
 import { feedDateAttribute, formatFeedDate, mergeFeedItems } from "../src/lib/feed.ts";
-import { commitFetchSize, excludedMessagePatterns, excludedRepoPatterns, maxCommitItems } from "../src/data/feed.ts";
+import {
+  commitFetchPages,
+  commitFetchSize,
+  excludedMessagePatterns,
+  excludedRepoPatterns,
+  feedPageSize,
+  maxCommitItems,
+  minMessageLength,
+} from "../src/data/feed.ts";
 
 /** A /search/commits result shaped like the real API's. */
 function searchResult(options: {
@@ -24,7 +32,7 @@ function searchResult(options: {
   const {
     repo = "hadissuryaalamin/example",
     date = "2026-09-01T10:00:00Z",
-    message = "Add a thing",
+    message = "Add a thing worth reading",
     sha = "a".repeat(40),
     isPrivate = false,
   } = options;
@@ -45,12 +53,12 @@ afterEach(() => {
 describe("commitItemsFromSearch: normalising search results", () => {
   it("turns 3 search results into 3 feed items", () => {
     const items = commitItemsFromSearch([
-      searchResult({ message: "First", sha: "1".repeat(40) }),
-      searchResult({ message: "Second", sha: "2".repeat(40) }),
-      searchResult({ message: "Third", sha: "3".repeat(40) }),
+      searchResult({ message: "First commit message", sha: "1".repeat(40) }),
+      searchResult({ message: "Second commit message", sha: "2".repeat(40) }),
+      searchResult({ message: "Third commit message", sha: "3".repeat(40) }),
     ]);
     expect(items).toHaveLength(3);
-    expect(items.map((i) => i.message)).toEqual(["First", "Second", "Third"]);
+    expect(items.map((i) => i.message)).toEqual(["First commit message", "Second commit message", "Third commit message"]);
   });
 
   it("keeps only the first line of a multi-line commit message", () => {
@@ -68,11 +76,11 @@ describe("commitItemsFromSearch: normalising search results", () => {
         "Merge pull request #12 from someone/branch",
         "Merge branch 'main' into feature",
         'Revert "Add a thing"',
-        "Bump deps [skip ci]",
-        "A real commit",
+        "Bump dependencies for the build [skip ci]",
+        "A real commit worth showing",
       ].map((message, i) => searchResult({ message, sha: `${i}`.repeat(40).slice(0, 40) })),
     );
-    expect(items.map((i) => i.message)).toEqual(["A real commit"]);
+    expect(items.map((i) => i.message)).toEqual(["A real commit worth showing"]);
   });
 
   it("has exclusion patterns that are all case-insensitive", () => {
@@ -85,7 +93,7 @@ describe("commitItemsFromSearch: normalising search results", () => {
   it("links to the repository page, never to an individual commit", () => {
     // A commit permalink embeds the 40-char SHA, whose hex digits trip
     // spec/privacy.test.ts's 9+-consecutive-digits guard by coincidence.
-    const items = commitItemsFromSearch([searchResult({ repo: "hadissuryaalamin/site", message: "Ship it" })]);
+    const items = commitItemsFromSearch([searchResult({ repo: "hadissuryaalamin/site", message: "Ship the thing at last" })]);
     expect(items[0].repo).toBe("hadissuryaalamin/site");
     expect(items[0].url).toBe("https://github.com/hadissuryaalamin/site");
     expect(items[0].url).not.toContain("/commit/");
@@ -99,9 +107,9 @@ describe("commitItemsFromSearch: normalising search results", () => {
       {},
       { sha: "a".repeat(40) },
       { sha: "a".repeat(40), commit: {} },
-      { sha: "a".repeat(40), commit: { message: "x" } },
+      { sha: "a".repeat(40), commit: { message: "a message long enough to pass" } },
       // Has everything except a repository, so it fails the public check.
-      { sha: "a".repeat(40), commit: { message: "x", author: { date: "2026-09-01T10:00:00Z" } } },
+      { sha: "a".repeat(40), commit: { message: "a message long enough to pass", author: { date: "2026-09-01T10:00:00Z" } } },
       { sha: null, commit: null, repository: null },
     ] as unknown as Parameters<typeof commitItemsFromSearch>[0];
     expect(() => commitItemsFromSearch(malformed)).not.toThrow();
@@ -110,7 +118,7 @@ describe("commitItemsFromSearch: normalising search results", () => {
 
   it("caps the number of commits at maxCommitItems", () => {
     const results = Array.from({ length: maxCommitItems + 25 }, (_, i) =>
-      searchResult({ message: `Commit ${i}`, sha: `${i}`.padStart(40, "0") }),
+      searchResult({ message: `Commit number ${i} in the run`, sha: `${i}`.padStart(40, "0") }),
     );
     expect(commitItemsFromSearch(results)).toHaveLength(maxCommitItems);
   });
@@ -122,10 +130,10 @@ describe("privacy: private repositories never reach the feed", () => {
   // A private commit message on a public site would be a real leak.
   it("drops a result whose repository is private", () => {
     const items = commitItemsFromSearch([
-      searchResult({ repo: "someone/secret", message: "Internal work", isPrivate: true }),
-      searchResult({ repo: "hadissuryaalamin/public", message: "Public work" }),
+      searchResult({ repo: "someone/secret", message: "Internal work in progress", isPrivate: true }),
+      searchResult({ repo: "hadissuryaalamin/public", message: "Public work in progress" }),
     ]);
-    expect(items.map((i) => i.message)).toEqual(["Public work"]);
+    expect(items.map((i) => i.message)).toEqual(["Public work in progress"]);
   });
 
   it("fails closed when the private flag is missing entirely", () => {
@@ -147,10 +155,10 @@ describe("repository filters: coursework never reaches the feed", () => {
   // repo, so without this filter it would put them straight back in.
   it("drops a COMP4020 repository", () => {
     const items = commitItemsFromSearch([
-      searchResult({ repo: "comp4020-agentic-coding-studio/comp4020-crit5-hadissuryaalamin", message: "Crit work" }),
-      searchResult({ repo: "hadissuryaalamin/MultiDrone", message: "Drone work" }),
+      searchResult({ repo: "comp4020-agentic-coding-studio/comp4020-crit5-hadissuryaalamin", message: "Crit work in progress" }),
+      searchResult({ repo: "hadissuryaalamin/MultiDrone", message: "Drone work in progress" }),
     ]);
-    expect(items.map((i) => i.message)).toEqual(["Drone work"]);
+    expect(items.map((i) => i.message)).toEqual(["Drone work in progress"]);
   });
 
   it("drops COMP8020 too", () => {
@@ -167,11 +175,48 @@ describe("repository filters: coursework never reaches the feed", () => {
     }
   });
 
-  it("over-fetches so the filters have material to work with", () => {
-    // Filtering happens after the fetch. At a fetch size equal to the display
-    // cap, a run of excluded commits can consume the whole page and leave the
-    // feed empty — which is what happened before this was raised.
-    expect(commitFetchSize).toBeGreaterThan(maxCommitItems);
+  it("fetches at least as many commits as it is willing to display", () => {
+    // Filtering happens after the fetch, so the walk has to reach far enough
+    // back to fill the cap. When the fetch was a single page the size of the
+    // cap, one run of excluded commits consumed the whole page and left the
+    // feed empty — that bug is what this guards.
+    expect(commitFetchSize * commitFetchPages).toBeGreaterThanOrEqual(maxCommitItems);
+  });
+});
+
+describe("short commit messages are dropped", () => {
+  it("drops a message shorter than minMessageLength", () => {
+    // Real histories are full of 'init', 'scrape', 'module' and the odd typo.
+    expect(commitItemsFromSearch([searchResult({ message: "init" })])).toEqual([]);
+    expect(commitItemsFromSearch([searchResult({ message: "fic CI" })])).toEqual([]);
+  });
+
+  it("keeps a message at exactly the threshold", () => {
+    const message = "x".repeat(minMessageLength);
+    expect(commitItemsFromSearch([searchResult({ message })])).toHaveLength(1);
+  });
+
+  it("measures the first line, not the whole body", () => {
+    // A one-word subject with a long body is still a one-word subject.
+    const message = ["init", "", "A long explanatory body that says much more."].join("\n");
+    expect(commitItemsFromSearch([searchResult({ message })])).toEqual([]);
+  });
+
+  it("measures after trimming, so whitespace can't pad a message past it", () => {
+    const message = `  init${" ".repeat(minMessageLength)}`;
+    expect(commitItemsFromSearch([searchResult({ message })])).toEqual([]);
+  });
+});
+
+describe("pagination sizing", () => {
+  it("splits into more than one page at the volume this account actually has", () => {
+    // ~250 items after filtering; a page size that swallowed them all would
+    // make the pager dead markup.
+    expect(feedPageSize).toBeLessThan(maxCommitItems);
+  });
+
+  it("walks more than one API page, since one page can't reach the cap", () => {
+    expect(commitFetchPages).toBeGreaterThan(1);
   });
 });
 
@@ -212,6 +257,35 @@ describe("fetch failure: the build must survive GitHub being unreachable", () =>
     await fetchCommitItems();
     expect(warn).toHaveBeenCalled();
     expect(String(warn.mock.calls[0][0])).toContain("[feed]");
+  });
+
+  it("stops walking pages as soon as one comes back short", async () => {
+    // A short page is the last page. Continuing would spend requests on
+    // results GitHub has already told us do not exist.
+    const fetchMock = vi.fn(() => Promise.resolve(Response.json({ items: [] })));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await fetchCommitItems();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the pages it already has when a later page fails", async () => {
+    const fullPage = Array.from({ length: commitFetchSize }, (_, i) =>
+      searchResult({ message: `A commit message number ${i}`, sha: `${i}`.padStart(40, "0") }),
+    );
+    let call = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => {
+        call += 1;
+        return call === 1
+          ? Promise.resolve(Response.json({ items: fullPage }))
+          : Promise.reject(new Error("offline"));
+      }),
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const items = await fetchCommitItems();
+    expect(items).toHaveLength(commitFetchSize);
   });
 
   it("sends a User-Agent, which GitHub rejects requests without", async () => {

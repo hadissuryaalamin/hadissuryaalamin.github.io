@@ -34,12 +34,14 @@
  * build-time-only module lives in src/lib/ instead.
  */
 import {
+  commitFetchPages,
   commitFetchSize,
   excludedMessagePatterns,
   excludedRepoPatterns,
   excludedRepos,
   feedGitHubUser,
   maxCommitItems,
+  minMessageLength,
 } from '../data/feed';
 
 /** One commit, normalised out of a search result. */
@@ -106,11 +108,15 @@ function isNonEmptyString(value: unknown): value is string {
  * GITHUB_TOKEN raises the search rate limit from 10/min to 30/min. CI passes
  * it in; locally its absence is fine, since one build makes one request.
  */
-export async function fetchCommitSearch(user: string = feedGitHubUser): Promise<SearchCommitResult[]> {
+export async function fetchCommitSearch(
+  user: string = feedGitHubUser,
+  page = 1,
+): Promise<SearchCommitResult[]> {
   const query = `author:${user}`;
   const url =
     `${API_BASE}/search/commits` +
-    `?q=${encodeURIComponent(query)}&sort=author-date&order=desc&per_page=${commitFetchSize}`;
+    `?q=${encodeURIComponent(query)}&sort=author-date&order=desc` +
+    `&per_page=${commitFetchSize}&page=${page}`;
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
@@ -125,18 +131,18 @@ export async function fetchCommitSearch(user: string = feedGitHubUser): Promise<
   try {
     const res = await fetch(url, { headers, signal: controller.signal });
     if (!res.ok) {
-      console.warn(`[feed] GitHub API returned HTTP ${res.status} — feed falls back to notes only.`);
+      console.warn(`[feed] GitHub API returned HTTP ${res.status} on page ${page} — stopping there.`);
       return [];
     }
     const body: unknown = await res.json();
     const items = (body as { items?: unknown } | null)?.items;
     if (!Array.isArray(items)) {
-      console.warn('[feed] GitHub API returned an unexpected shape — feed falls back to notes only.');
+      console.warn(`[feed] GitHub API returned an unexpected shape on page ${page} — stopping there.`);
       return [];
     }
     return items as SearchCommitResult[];
   } catch (err) {
-    console.warn('[feed] GitHub API unavailable — feed falls back to notes only:', err);
+    console.warn(`[feed] GitHub API unavailable on page ${page} — stopping there:`, err);
     return [];
   } finally {
     clearTimeout(timer);
@@ -180,7 +186,9 @@ export function commitItemsFromSearch(results: SearchCommitResult[]): CommitItem
     // Commit bodies are frequently several paragraphs; the feed shows the
     // subject line only.
     const message = rawMessage.split('\n')[0].trim();
-    if (message === '') continue;
+    // Short subjects ('init', 'scrape', 'fic CI') are honest but tell a
+    // reader nothing, and a feed is skimmed.
+    if (message.length < minMessageLength) continue;
     if (excludedMessagePatterns.some((pattern) => pattern.test(message))) continue;
 
     // The repo page, not `result.html_url` (which points at the commit).
@@ -195,7 +203,20 @@ export function commitItemsFromSearch(results: SearchCommitResult[]): CommitItem
  */
 export async function fetchCommitItems(user: string = feedGitHubUser): Promise<CommitItem[]> {
   try {
-    return commitItemsFromSearch(await fetchCommitSearch(user));
+    const results: SearchCommitResult[] = [];
+
+    // Sequential rather than parallel: four concurrent requests are the
+    // shape of thing GitHub's secondary rate limits exist to catch, and the
+    // whole walk costs under a second either way.
+    for (let page = 1; page <= commitFetchPages; page++) {
+      const pageResults = await fetchCommitSearch(user, page);
+      results.push(...pageResults);
+      // A short page is the last page — and an empty one means the request
+      // failed, which fetchCommitSearch has already reported.
+      if (pageResults.length < commitFetchSize) break;
+    }
+
+    return commitItemsFromSearch(results);
   } catch (err) {
     // fetchCommitSearch already swallows network failures; this catches a
     // malformed payload getting through the shape checks in the normaliser.

@@ -48,22 +48,45 @@ export const feedNotes: FeedNote[] = [
 export const feedGitHubUser = 'hadissuryaalamin';
 
 /**
- * How many commits to ask the API for. 100 is its per-page maximum.
- *
- * This is deliberately much larger than maxCommitItems: the filters below run
- * *after* the fetch, and excluded repositories can easily account for most of
- * a page. Asking for only as many as we intend to show would let one busy
- * stretch of coursework crowd every other repo out of the feed entirely —
- * which is exactly what happened at a fetch size of 40, where all 40 most
- * recent commits were excluded and the feed came back empty.
+ * How many commits to ask the API for per request. 100 is its per-page
+ * maximum.
  */
 export const commitFetchSize = 100;
 
 /**
- * Upper bound on how many commits reach the page, applied after filtering.
- * Keeps the feed to a readable length if activity picks up.
+ * How many pages of `commitFetchSize` to fetch. The account's full public
+ * history is about 380 commits, and the filters below reject roughly a third
+ * of them, so four pages covers everything with room to grow.
+ *
+ * Each page is one API request at build time. The search endpoint allows
+ * 10/min unauthenticated and 30/min with a token, so four sequential requests
+ * are comfortable either way; a page that fails simply ends the walk and the
+ * feed shows what it already has.
  */
-export const maxCommitItems = 40;
+export const commitFetchPages = 4;
+
+/**
+ * Upper bound on how many commits reach the site, applied after filtering.
+ * Generous rather than tight: the feed is paginated, so a long history costs
+ * extra pages rather than one unreadable wall of entries.
+ */
+export const maxCommitItems = 400;
+
+/**
+ * How many entries appear on one page of /feed/.
+ */
+export const feedPageSize = 15;
+
+/**
+ * Commit messages shorter than this are dropped.
+ *
+ * A real history contains a lot of 'init', 'module', 'scrape' and the
+ * occasional typo ('fic CI'). They are honest, but they tell a reader
+ * nothing, and a feed is a thing people skim. The threshold is a blunt
+ * instrument — a genuinely terse-but-meaningful message can be caught by it —
+ * which is the trade accepted here for not having to curate by hand.
+ */
+export const minMessageLength = 15;
 
 /**
  * Repositories whose commits never reach the feed, matched against the full

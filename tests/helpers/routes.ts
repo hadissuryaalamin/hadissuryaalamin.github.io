@@ -7,6 +7,9 @@ export const ROUTES = [
   "/",
   "/cv/",
   "/feed/",
+  // A middle page of the paginated feed, so the pager markup is covered
+  // by the accessibility/layout/theme suites too, not just page 1.
+  "/feed/2/",
   "/projects/dishpatch/",
   "/projects/gpt2-from-scratch/",
   "/projects/deep-learning-statistical-arbitrage/",
