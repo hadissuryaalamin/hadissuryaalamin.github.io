@@ -271,25 +271,14 @@ describe("criterion 22b: gpt2-from-scratch credits karpathy/nanoGPT and links th
   });
 });
 
-describe("criterion 24: no COMP4020 web-dev prototype mentioned or linked on the portfolio pages", () => {
-  // Scoped to the portfolio — every page except /feed/.
-  //
-  // The criterion exists to keep coursework prototypes out of the work a
-  // recruiter reads: the home page, the CV, the project pages. /feed/ is a
-  // different kind of page, added later — an activity log whose whole point is
-  // "here is what I have actually been pushing", coursework included, with
-  // anyone wanting detail sent to GitHub. The home page's teaser is filtered
-  // accordingly (portfolioHiddenRepoPatterns in src/data/feed.ts), so the
-  // portfolio itself still satisfies the original criterion.
-  const portfolioPages = pages.filter(({ name }) => !name.startsWith("feed/"));
-
-  it("found portfolio pages to check (guards against the filter matching everything)", () => {
-    expect(portfolioPages.length).toBeGreaterThan(0);
-  });
-
+describe("criterion 24: no COMP4020 web-dev prototype mentioned or linked anywhere", () => {
+  // Note for anyone adding a feature that pulls in outside content: the
+  // activity feed (/feed/) draws commits from every public repo, so it
+  // excludes coursework repositories by name — see excludedRepoPatterns in
+  // src/data/feed.ts. Without that filter this criterion fails here.
   for (const term of EXCLUDED_COMP4020_PROTOTYPES) {
-    it(`"${term}" does not appear on any portfolio page`, () => {
-      for (const { name, doc } of portfolioPages) {
+    it(`"${term}" does not appear on any page`, () => {
+      for (const { name, doc } of pages) {
         expect(textOf(doc), `found "${term}" on ${name}`).not.toMatch(new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
       }
     });

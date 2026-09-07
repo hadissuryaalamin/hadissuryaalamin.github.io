@@ -33,7 +33,14 @@
  * src/scripts/ is browser-side code (motion.ts, theme.ts), so this
  * build-time-only module lives in src/lib/ instead.
  */
-import { excludedMessagePatterns, excludedRepos, feedGitHubUser, maxCommitItems } from '../data/feed';
+import {
+  commitFetchSize,
+  excludedMessagePatterns,
+  excludedRepoPatterns,
+  excludedRepos,
+  feedGitHubUser,
+  maxCommitItems,
+} from '../data/feed';
 
 /** One commit, normalised out of a search result. */
 export interface CommitItem {
@@ -92,6 +99,10 @@ function isNonEmptyString(value: unknown): value is string {
  * Fetch the user's most recent commits across all public repositories.
  * Returns [] on any failure at all.
  *
+ * Asks for commitFetchSize results rather than maxCommitItems: filtering
+ * happens afterwards, so the fetch has to over-fetch to leave the filters
+ * something to work with.
+ *
  * GITHUB_TOKEN raises the search rate limit from 10/min to 30/min. CI passes
  * it in; locally its absence is fine, since one build makes one request.
  */
@@ -99,7 +110,7 @@ export async function fetchCommitSearch(user: string = feedGitHubUser): Promise<
   const query = `author:${user}`;
   const url =
     `${API_BASE}/search/commits` +
-    `?q=${encodeURIComponent(query)}&sort=author-date&order=desc&per_page=${maxCommitItems}`;
+    `?q=${encodeURIComponent(query)}&sort=author-date&order=desc&per_page=${commitFetchSize}`;
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
@@ -164,6 +175,7 @@ export function commitItemsFromSearch(results: SearchCommitResult[]): CommitItem
     // Fail closed: only an explicit `false` counts as public.
     if (result.repository?.private !== false) continue;
     if (excludedRepos.includes(repo)) continue;
+    if (excludedRepoPatterns.some((pattern) => pattern.test(repo))) continue;
 
     // Commit bodies are frequently several paragraphs; the feed shows the
     // subject line only.

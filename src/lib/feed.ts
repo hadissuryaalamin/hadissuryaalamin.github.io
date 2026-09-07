@@ -6,7 +6,7 @@
  * Build-time only, like its GitHub counterpart: the pages call buildFeed()
  * in their frontmatter and ship the result as plain HTML.
  */
-import { feedNotes, portfolioHiddenRepoPatterns, type FeedNote } from '../data/feed';
+import { feedNotes, type FeedNote } from '../data/feed';
 import { fetchCommitItems, type CommitItem } from './github';
 
 /** A hand-written note, tagged so the renderer can tell the two apart. */
@@ -38,38 +38,17 @@ export function mergeFeedItems(commits: CommitItem[], notes: FeedNote[], limit?:
 }
 
 /**
- * True for an item the home page must not show. Notes are always fine; a
- * commit is hidden when its repo matches portfolioHiddenRepoPatterns.
+ * The feed, newest first, optionally capped at `limit` items.
  *
- * Exported for the unit tests — the home page goes through buildPortfolioFeed.
- */
-export function isHiddenFromPortfolio(item: FeedItem): boolean {
-  if (item.kind !== 'commit') return false;
-  return portfolioHiddenRepoPatterns.some((pattern) => pattern.test(item.repo));
-}
-
-/**
- * The full feed, newest first, optionally capped at `limit` items. This is
- * what /feed/ renders — everything, coursework included.
+ * The home page passes a small limit for its teaser and /feed/ passes none;
+ * both show the same list, since the repository filters in src/data/feed.ts
+ * already decide what belongs in it.
  *
  * Never throws: if GitHub is unreachable the commit half comes back empty and
  * the feed degrades to its notes.
  */
 export async function buildFeed(limit?: number): Promise<FeedItem[]> {
   return mergeFeedItems(await fetchCommitItems(), feedNotes, limit);
-}
-
-/**
- * The feed as the *home page* shows it: the same list with coursework repos
- * filtered out (see portfolioHiddenRepoPatterns for why the two pages differ).
- *
- * The limit is applied after filtering, so a burst of hidden commits can't
- * silently empty the teaser.
- */
-export async function buildPortfolioFeed(limit?: number): Promise<FeedItem[]> {
-  const all = mergeFeedItems(await fetchCommitItems(), feedNotes);
-  const visible = all.filter((item) => !isHiddenFromPortfolio(item));
-  return typeof limit === 'number' ? visible.slice(0, limit) : visible;
 }
 
 /**

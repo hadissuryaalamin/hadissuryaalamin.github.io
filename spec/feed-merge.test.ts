@@ -10,8 +10,8 @@
 // takes the whole site offline rather than just emptying half of one section.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { commitItemsFromSearch, fetchCommitItems, fetchCommitSearch } from "../src/lib/github.ts";
-import { feedDateAttribute, formatFeedDate, isHiddenFromPortfolio, mergeFeedItems } from "../src/lib/feed.ts";
-import { excludedMessagePatterns, maxCommitItems } from "../src/data/feed.ts";
+import { feedDateAttribute, formatFeedDate, mergeFeedItems } from "../src/lib/feed.ts";
+import { commitFetchSize, excludedMessagePatterns, excludedRepoPatterns, maxCommitItems } from "../src/data/feed.ts";
 
 /** A /search/commits result shaped like the real API's. */
 function searchResult(options: {
@@ -141,47 +141,37 @@ describe("privacy: private repositories never reach the feed", () => {
   });
 });
 
-describe("portfolio filter: coursework is hidden from the home page, kept on /feed/", () => {
-  const coursework = {
-    kind: "commit" as const,
-    date: "2026-09-05T10:00:00Z",
-    message: "Crit 5 work",
-    repo: "comp4020-agentic-coding-studio/comp4020-crit5-hadissuryaalamin",
-    sha: "a".repeat(40),
-    url: "https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-hadissuryaalamin",
-  };
-  const ordinary = {
-    kind: "commit" as const,
-    date: "2026-09-04T10:00:00Z",
-    message: "Drone work",
-    repo: "hadissuryaalamin/MultiDrone",
-    sha: "b".repeat(40),
-    url: "https://github.com/hadissuryaalamin/MultiDrone",
-  };
-
-  it("hides a COMP4020 repo from the portfolio", () => {
-    expect(isHiddenFromPortfolio(coursework)).toBe(true);
+describe("repository filters: coursework never reaches the feed", () => {
+  // The site keeps COMP4020/COMP8020 prototypes out of its content
+  // (spec/content.test.ts criterion 24). The feed pulls from every public
+  // repo, so without this filter it would put them straight back in.
+  it("drops a COMP4020 repository", () => {
+    const items = commitItemsFromSearch([
+      searchResult({ repo: "comp4020-agentic-coding-studio/comp4020-crit5-hadissuryaalamin", message: "Crit work" }),
+      searchResult({ repo: "hadissuryaalamin/MultiDrone", message: "Drone work" }),
+    ]);
+    expect(items.map((i) => i.message)).toEqual(["Drone work"]);
   });
 
-  it("hides COMP8020 too", () => {
-    expect(isHiddenFromPortfolio({ ...coursework, repo: "x/comp8020-something" })).toBe(true);
+  it("drops COMP8020 too", () => {
+    expect(commitItemsFromSearch([searchResult({ repo: "x/comp8020-something" })])).toEqual([]);
   });
 
-  it("matches the repo name case-insensitively", () => {
-    expect(isHiddenFromPortfolio({ ...coursework, repo: "x/COMP4020-Crit5" })).toBe(true);
+  it("matches the repository name case-insensitively", () => {
+    expect(commitItemsFromSearch([searchResult({ repo: "x/COMP4020-Crit5" })])).toEqual([]);
   });
 
-  it("leaves ordinary repos visible", () => {
-    expect(isHiddenFromPortfolio(ordinary)).toBe(false);
+  it("keeps every exclusion pattern case-insensitive", () => {
+    for (const pattern of excludedRepoPatterns) {
+      expect(pattern.flags, `${pattern} should be case-insensitive`).toContain("i");
+    }
   });
 
-  it("never hides a hand-written note", () => {
-    expect(isHiddenFromPortfolio({ kind: "note", date: "2026-09-01", text: "A note" })).toBe(false);
-  });
-
-  it("keeps coursework in the unfiltered merge, so /feed/ still shows it", () => {
-    const merged = mergeFeedItems([coursework, ordinary], []);
-    expect(merged.map((i) => ("repo" in i ? i.repo : ""))).toContain(coursework.repo);
+  it("over-fetches so the filters have material to work with", () => {
+    // Filtering happens after the fetch. At a fetch size equal to the display
+    // cap, a run of excluded commits can consume the whole page and leave the
+    // feed empty — which is what happened before this was raised.
+    expect(commitFetchSize).toBeGreaterThan(maxCommitItems);
   });
 });
 

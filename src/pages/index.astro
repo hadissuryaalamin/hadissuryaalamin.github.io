@@ -6,10 +6,10 @@
 // The feed teaser sits between other work and contact so the page reads
 // "selected work → other work → what I'm doing now → get in touch".
 //
-// Note buildPortfolioFeed, not buildFeed: this page is the portfolio, and
-// coursework repos are kept off it (epic criterion 24, enforced by
-// spec/content.test.ts). /feed/ shows the unfiltered list. See
-// portfolioHiddenRepoPatterns in src/data/feed.ts for the reasoning.
+// The teaser and /feed/ show the same list, just cut to different lengths —
+// which repositories belong in the feed at all is decided once, by the
+// filters in src/data/feed.ts (coursework is excluded there, keeping this
+// page clear of it per criterion 24).
 //
 // The GitHub request happens at build time — see src/lib/github.ts for the
 // contract that an outage empties the section rather than failing the build.
@@ -20,9 +20,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { about, contact, feed, identity, otherWorkHeading } from '../data/site';
 import { pageMeta } from '../data/meta';
 import { featuredProjects, otherWork } from '../data/projects';
-import { buildPortfolioFeed } from '../lib/feed';
+import { buildFeed } from '../lib/feed';
 
-const feedTeaser = await buildPortfolioFeed(5);
+const feedTeaser = await buildFeed(5);
 ---
 
 <BaseLayout title={pageMeta.home.title} description={pageMeta.home.description}>

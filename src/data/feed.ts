@@ -48,33 +48,44 @@ export const feedNotes: FeedNote[] = [
 export const feedGitHubUser = 'hadissuryaalamin';
 
 /**
- * How many commits the merge will consider before capping. The API returns at
- * most 100 events per page and each push event can carry several commits, so
- * this is a guard against one busy afternoon flooding the whole feed.
+ * How many commits to ask the API for. 100 is its per-page maximum.
+ *
+ * This is deliberately much larger than maxCommitItems: the filters below run
+ * *after* the fetch, and excluded repositories can easily account for most of
+ * a page. Asking for only as many as we intend to show would let one busy
+ * stretch of coursework crowd every other repo out of the feed entirely —
+ * which is exactly what happened at a fetch size of 40, where all 40 most
+ * recent commits were excluded and the feed came back empty.
+ */
+export const commitFetchSize = 100;
+
+/**
+ * Upper bound on how many commits reach the page, applied after filtering.
+ * Keeps the feed to a readable length if activity picks up.
  */
 export const maxCommitItems = 40;
 
 /**
- * Repositories whose commits never reach the feed at all, on any page,
- * matched against the full `owner/name` the API reports.
- *
- * Worth remembering that this feed pulls from *all* public activity: anything
- * pushed publicly shows up unless it is excluded, commit message and all.
+ * Repositories whose commits never reach the feed, matched against the full
+ * `owner/name` the API reports. Exact matches; see the patterns below for
+ * anything broader.
  */
 export const excludedRepos: string[] = [];
 
 /**
- * Repositories kept off the *home page* teaser, but still shown on /feed/.
+ * Repository name patterns excluded from the feed, matched case-insensitively
+ * against the full `owner/name`.
  *
- * Coursework is the case this exists for. The home page is the portfolio —
- * the thing a recruiter reads — and spec/content.test.ts's criterion 24 keeps
- * COMP4020 prototypes off it entirely. /feed/ is a different kind of page: an
- * activity log, where "this is what I've actually been pushing" is the whole
- * point, coursework included. A visitor who wants the detail goes to GitHub.
+ * COMP4020/COMP8020 coursework is the reason this exists. The site already
+ * keeps those prototypes out of its content (spec/content.test.ts criterion
+ * 24) — a feed that pulled them back in through the side door would undo
+ * that, and would also mean a portfolio whose most prominent recent activity
+ * is weekly coursework rather than the work the site is actually about.
  *
- * Matched case-insensitively against the full `owner/name`.
+ * Worth remembering that this feed pulls from *all* public activity: anything
+ * pushed publicly shows up unless it is excluded, commit message and all.
  */
-export const portfolioHiddenRepoPatterns: RegExp[] = [/comp4020/i, /comp8020/i];
+export const excludedRepoPatterns: RegExp[] = [/comp4020/i, /comp8020/i];
 
 /**
  * Commit messages matching any of these are dropped. Merge commits and bot

@@ -34,23 +34,31 @@ const { items } = Astro.props;
           data-animate="card"
           class="rounded-lg border border-border bg-bg-elevated p-5 transition-colors hover:border-border-strong md:p-6"
         >
+          {/*
+            `min-w-0` + `break-words` on the repo line: a flex item defaults to
+            min-width:auto, so a long unbroken name like
+            "hadissuryaalamin/hadissuryaalamin.github.io" refuses to shrink and
+            pushes the whole page wider than the viewport (measured: 406px
+            against a 320px screen, tests/layout.spec.ts criterion 51).
+            MetricStrip solves the same problem the same way.
+          */}
           <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <p class="text-micro text-accent-ink">
+            <p class="text-micro min-w-0 break-words text-accent-ink">
               {item.kind === 'commit' ? item.repo : 'Note'}
             </p>
-            <time datetime={feedDateAttribute(item.date)} class="text-meta text-text-muted">
+            <time datetime={feedDateAttribute(item.date)} class="text-meta shrink-0 text-text-muted">
               {formatFeedDate(item.date)}
             </time>
           </div>
 
           {item.kind === 'commit' ? (
-            <p class="prose-measure mt-2 text-text">
+            <p class="prose-measure mt-2 break-words text-text">
               <a href={item.url} class="link-accent" rel="noopener">
                 {item.message}
               </a>
             </p>
           ) : (
-            <p class="prose-measure mt-2 text-text-muted">
+            <p class="prose-measure mt-2 break-words text-text-muted">
               {item.text}
               {item.link && (
                 <>
