@@ -92,7 +92,7 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy_retry.outputs.page_url || steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -111,9 +111,13 @@ jobs:
           path: ./dist
       - id: deploy
         uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - id: deploy_retry
+        if: ${{ steps.deploy.outcome == 'failure' }}
+        uses: actions/deploy-pages@v5
       - name: Verify the deployed site is online (criterion 3)
         run: |
-          url="${{ steps.deploy.outputs.page_url }}"
+          url="${{ steps.deploy_retry.outputs.page_url || steps.deploy.outputs.page_url }}"
           for i in 1 2 3 4 5; do
             code=$(curl -s -o /dev/null -w "%{http_code}" "$url" || true)
             if [ "$code" = "200" ]; then echo "online: $url"; exit 0; fi
@@ -123,5 +127,5 @@ jobs:
           echo "site did not return 200"; exit 1
       - name: Check the live site for broken links/assets (criterion 4)
         run: |
-          url="${{ steps.deploy.outputs.page_url }}"
+          url="${{ steps.deploy_retry.outputs.page_url || steps.deploy.outputs.page_url }}"
           pnpm dlx linkinator "$url" --recurse --silent
