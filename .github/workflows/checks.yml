@@ -142,8 +142,10 @@ jobs:
 
           echo "page_url=$url" >> "$GITHUB_OUTPUT"
       - name: Verify the deployed site is online (criterion 3)
+        env:
+          PAGE_URL: ${{ steps.resolve_deploy.outputs.page_url }}
         run: |
-          url="${{ steps.resolve_deploy.outputs.page_url }}"
+          url="$PAGE_URL"
           for i in 1 2 3 4 5; do
             code=$(curl -s -o /dev/null -w "%{http_code}" "$url" || true)
             if [ "$code" = "200" ]; then echo "online: $url"; exit 0; fi
@@ -152,6 +154,8 @@ jobs:
           done
           echo "site did not return 200"; exit 1
       - name: Check the live site for broken links/assets (criterion 4)
+        env:
+          PAGE_URL: ${{ steps.resolve_deploy.outputs.page_url }}
         run: |
-          url="${{ steps.resolve_deploy.outputs.page_url }}"
+          url="$PAGE_URL"
           pnpm dlx linkinator "$url" --recurse --silent
