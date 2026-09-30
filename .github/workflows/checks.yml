@@ -116,6 +116,7 @@ jobs:
         if: ${{ steps.deploy.outcome == 'failure' }}
         uses: actions/deploy-pages@v5
       - name: Verify the deployed site is online (criterion 3)
+        if: ${{ steps.deploy_retry.outcome != 'failure' && (steps.deploy_retry.outputs.page_url != '' || steps.deploy.outputs.page_url != '') }}
         run: |
           url="${{ steps.deploy_retry.outputs.page_url || steps.deploy.outputs.page_url }}"
           for i in 1 2 3 4 5; do
@@ -126,6 +127,7 @@ jobs:
           done
           echo "site did not return 200"; exit 1
       - name: Check the live site for broken links/assets (criterion 4)
+        if: ${{ steps.deploy_retry.outcome != 'failure' && (steps.deploy_retry.outputs.page_url != '' || steps.deploy.outputs.page_url != '') }}
         run: |
           url="${{ steps.deploy_retry.outputs.page_url || steps.deploy.outputs.page_url }}"
           pnpm dlx linkinator "$url" --recurse --silent
