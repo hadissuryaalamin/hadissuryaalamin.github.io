@@ -118,7 +118,7 @@ jobs:
         continue-on-error: true
       - id: resolve_deploy
         name: Resolve deployed URL
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         shell: bash
         env:
           DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
@@ -126,10 +126,10 @@ jobs:
           DEPLOY_RETRY_OUTCOME: ${{ steps.deploy_retry.outcome }}
           DEPLOY_RETRY_URL: ${{ steps.deploy_retry.outputs.page_url }}
         run: |
-          if [ "$DEPLOY_RETRY_OUTCOME" = "success" ]; then
-            url="$DEPLOY_RETRY_URL"
-          elif [ "$DEPLOY_OUTCOME" = "success" ]; then
+          if [ "$DEPLOY_OUTCOME" = "success" ]; then
             url="$DEPLOY_URL"
+          elif [ "$DEPLOY_RETRY_OUTCOME" = "success" ]; then
+            url="$DEPLOY_RETRY_URL"
           else
             echo "Both Pages deploy attempts failed."
             exit 1
