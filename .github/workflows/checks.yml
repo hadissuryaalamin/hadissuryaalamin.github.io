@@ -115,14 +115,21 @@ jobs:
       - id: deploy_retry
         if: ${{ steps.deploy.outcome == 'failure' }}
         uses: actions/deploy-pages@v5
+        continue-on-error: true
       - id: resolve_deploy
         name: Resolve deployed URL
+        if: ${{ always() }}
         shell: bash
+        env:
+          DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          DEPLOY_URL: ${{ steps.deploy.outputs.page_url }}
+          DEPLOY_RETRY_OUTCOME: ${{ steps.deploy_retry.outcome }}
+          DEPLOY_RETRY_URL: ${{ steps.deploy_retry.outputs.page_url }}
         run: |
-          if [ "${{ steps.deploy_retry.outcome }}" = "success" ]; then
-            url="${{ steps.deploy_retry.outputs.page_url }}"
-          elif [ "${{ steps.deploy.outcome }}" = "success" ]; then
-            url="${{ steps.deploy.outputs.page_url }}"
+          if [ "$DEPLOY_RETRY_OUTCOME" = "success" ]; then
+            url="$DEPLOY_RETRY_URL"
+          elif [ "$DEPLOY_OUTCOME" = "success" ]; then
+            url="$DEPLOY_URL"
           else
             echo "Both Pages deploy attempts failed."
             exit 1
