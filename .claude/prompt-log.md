@@ -5,3 +5,7 @@ I want to update the hadissuryalaamin page portofolio. Add a section like galler
 ## 2026-10-22 22:40
 
 yes build the gallery
+
+## 2026-10-23 09:00
+
+Good but what I imagined is like slideshow

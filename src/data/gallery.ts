@@ -13,7 +13,6 @@ import pidPoster from '../assets/gallery/pid-simulation-poster.jpg';
 interface BaseItem {
   caption: string;
   alt: string;
-  wide?: boolean;
 }
 
 export interface PhotoItem extends BaseItem {
@@ -45,7 +44,6 @@ export const galleryItems: GalleryItem[] = [
     duration: '2:33',
     caption: 'Hand-sanitiser dispenser with fill-level sensing — demo',
     alt: 'Video still: a man in a face mask using a wall-mounted sanitiser dispenser beside a small sensor unit',
-    wide: true,
   },
   {
     kind: 'photo',

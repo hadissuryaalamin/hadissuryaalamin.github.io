@@ -724,6 +724,13 @@ ScrollTrigger explicitly. Use `gsap.matchMedia()` for the reduced-motion split.
 - **Section headings and body, on enter:** fade + 16px rise, 0.45 s.
 - **Project cards, on enter:** fade + 20px rise, 0.5 s, stagger 0.08 s.
 - **CV page:** fade only, no slide — it is a document.
+- **Gallery slideshow (added 2026-10-23, client decision):** the home-page
+  gallery auto-advances every 5 s. The client chose this after being told it
+  conflicts with §8.4.1. It is a deliberate exception, limited to this one
+  component: it only runs while the gallery is on screen, pauses on hover,
+  keyboard focus or video playback, has a visible pause button, and never
+  starts under `prefers-reduced-motion: reduce`. With JS off it degrades to a
+  plain swipeable strip. It is not a precedent for ambient motion elsewhere.
 - **Nothing else.**
 
 ### 8.4 Hard constraints
