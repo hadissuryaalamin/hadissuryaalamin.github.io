@@ -326,3 +326,60 @@ picture {
   border-color: var(--border-strong);
   color: var(--accent-ink);
 }
+
+/* ---------------------------------------------------------------------- *
+ * Gallery
+ * ---------------------------------------------------------------------- */
+
+.gallery-tile {
+  aspect-ratio: 4 / 3;
+}
+
+.gallery-tile-wide {
+  aspect-ratio: 21 / 9;
+}
+
+.gallery-badge {
+  background: rgb(11 14 17 / 78%);
+  color: #fff;
+}
+
+.gallery-viewer {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.gallery-viewer::backdrop {
+  background: rgb(0 0 0 / 70%);
+}
+
+.gallery-viewer .viewer-media {
+  max-width: 100%;
+  max-height: calc(100dvh - 140px);
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.gallery-viewer .viewer-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  background: var(--bg);
+  font-size: 1.5rem;
+}
+
+@media (width < 640px) {
+  .gallery-viewer .viewer-nav {
+    top: auto;
+    bottom: -52px;
+    transform: none;
+  }
+}

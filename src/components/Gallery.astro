@@ -1,0 +1,145 @@
+---
+// Each tile is a real link to the full-size file, so the gallery still works
+// with JavaScript off; the script below upgrades clicks into the <dialog> viewer.
+import { Image, getImage } from 'astro:assets';
+import { galleryItems } from '../data/gallery';
+
+const items = await Promise.all(
+  galleryItems.map(async (item) => {
+    const thumbSource = item.kind === 'photo' ? item.image : item.poster;
+    const full =
+      item.kind === 'photo'
+        ? (await getImage({ src: item.image, width: 1600, format: 'webp', quality: 80 })).src
+        : item.src;
+    return { ...item, thumbSource, full };
+  }),
+);
+
+// An odd number of regular tiles would leave a lone tile in the phone's
+// two-column grid, so the last one spans both columns there.
+const regular = items.filter((item) => !item.wide);
+const phoneSpanLast = regular.length % 2 === 1 ? regular.at(-1) : undefined;
+---
+
+<ul data-animate-stagger class="mt-10 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+  {
+    items.map((item, index) => (
+      <li
+        data-animate="card"
+        class:list={[
+          { 'col-span-2 md:col-span-3': item.wide, 'col-span-2 md:col-span-1': item === phoneSpanLast },
+        ]}
+      >
+        <a
+          href={item.full}
+          class:list={[
+            'gallery-tile group relative block overflow-hidden rounded-lg border border-border bg-surface',
+            { 'gallery-tile-wide': item.wide },
+          ]}
+          data-gallery-index={index}
+          data-kind={item.kind}
+          data-caption={item.caption}
+          data-alt={item.alt}
+          aria-label={item.kind === 'video' ? `Play video: ${item.caption}` : `View photo: ${item.caption}`}
+        >
+          <Image
+            src={item.thumbSource}
+            alt={item.alt}
+            widths={item.wide ? [640, 1100] : [400, 640]}
+            sizes={
+              item.wide
+                ? '(min-width: 1152px) 1060px, 100vw'
+                : '(min-width: 1152px) 340px, (min-width: 768px) 33vw, 50vw'
+            }
+            format="webp"
+            quality={70}
+            loading="lazy"
+            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none"
+          />
+          {item.kind === 'video' && (
+            <span class="gallery-badge text-micro absolute top-3 left-3 rounded-full px-2.5 py-1">
+              ▶ Video · {item.duration}
+            </span>
+          )}
+        </a>
+        <p class="text-meta mt-2 text-text-muted">{item.caption}</p>
+      </li>
+    ))
+  }
+</ul>
+
+<dialog id="gallery-viewer" class="gallery-viewer" aria-label="Gallery viewer">
+  <div class="flex h-full flex-col">
+    <div class="flex items-center justify-between gap-4 px-4 py-3">
+      <p class="text-meta text-text-muted" data-viewer-count></p>
+      <button type="button" class="theme-toggle" data-viewer-close aria-label="Close viewer">✕</button>
+    </div>
+    <div class="relative flex min-h-0 flex-1 items-center justify-center px-4">
+      <button type="button" class="theme-toggle viewer-nav left-4" data-viewer-prev aria-label="Previous item">‹</button>
+      <div data-viewer-media class="flex h-full w-full items-center justify-center"></div>
+      <button type="button" class="theme-toggle viewer-nav right-4" data-viewer-next aria-label="Next item">›</button>
+    </div>
+    <p class="px-16 py-4 text-center text-text sm:px-4" data-viewer-caption></p>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.getElementById('gallery-viewer') as HTMLDialogElement | null;
+  const tiles = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-gallery-index]'));
+
+  if (dialog && tiles.length > 0) {
+    const media = dialog.querySelector<HTMLElement>('[data-viewer-media]')!;
+    const caption = dialog.querySelector<HTMLElement>('[data-viewer-caption]')!;
+    const count = dialog.querySelector<HTMLElement>('[data-viewer-count]')!;
+    let current = 0;
+
+    const show = (index: number) => {
+      current = (index + tiles.length) % tiles.length;
+      const tile = tiles[current];
+      media.replaceChildren();
+      if (tile.dataset.kind === 'video') {
+        const video = document.createElement('video');
+        video.src = tile.href;
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.setAttribute('aria-label', tile.dataset.alt ?? '');
+        video.className = 'viewer-media';
+        media.append(video);
+      } else {
+        const img = document.createElement('img');
+        img.src = tile.href;
+        img.alt = tile.dataset.alt ?? '';
+        img.className = 'viewer-media';
+        media.append(img);
+      }
+      caption.textContent = tile.dataset.caption ?? '';
+      count.textContent = `${current + 1} / ${tiles.length}`;
+    };
+
+    tiles.forEach((tile, index) => {
+      tile.addEventListener('click', (event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+        event.preventDefault();
+        show(index);
+        dialog.showModal();
+      });
+    });
+
+    dialog.querySelector('[data-viewer-prev]')!.addEventListener('click', () => show(current - 1));
+    dialog.querySelector('[data-viewer-next]')!.addEventListener('click', () => show(current + 1));
+    dialog.querySelector('[data-viewer-close]')!.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') show(current - 1);
+      if (event.key === 'ArrowRight') show(current + 1);
+    });
+    // Stops a playing video when the viewer closes, including via Escape.
+    dialog.addEventListener('close', () => {
+      media.replaceChildren();
+      tiles[current]?.focus();
+    });
+  }
+</script>
