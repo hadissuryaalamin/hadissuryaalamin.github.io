@@ -9,3 +9,7 @@ yes build the gallery
 ## 2026-10-23 09:00
 
 Good but what I imagined is like slideshow
+
+## 2026-10-23 01:26
+
+push and merge
