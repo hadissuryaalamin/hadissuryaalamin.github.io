@@ -92,7 +92,7 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.resolve_deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -111,9 +111,41 @@ jobs:
           path: ./dist
       - id: deploy
         uses: actions/deploy-pages@v5
-      - name: Verify the deployed site is online (criterion 3)
+        continue-on-error: true
+      - id: deploy_retry
+        if: ${{ steps.deploy.outcome == 'failure' }}
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - id: resolve_deploy
+        name: Resolve deployed URL
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          DEPLOY_URL: ${{ steps.deploy.outputs.page_url }}
+          DEPLOY_RETRY_OUTCOME: ${{ steps.deploy_retry.outcome }}
+          DEPLOY_RETRY_URL: ${{ steps.deploy_retry.outputs.page_url }}
         run: |
-          url="${{ steps.deploy.outputs.page_url }}"
+          if [ "$DEPLOY_OUTCOME" = "success" ]; then
+            url="$DEPLOY_URL"
+          elif [ "$DEPLOY_RETRY_OUTCOME" = "success" ]; then
+            url="$DEPLOY_RETRY_URL"
+          else
+            echo "Both Pages deploy attempts failed."
+            exit 1
+          fi
+
+          if [ -z "$url" ]; then
+            echo "Pages deploy succeeded but no page URL was returned."
+            exit 1
+          fi
+
+          echo "page_url=$url" >> "$GITHUB_OUTPUT"
+      - name: Verify the deployed site is online (criterion 3)
+        env:
+          PAGE_URL: ${{ steps.resolve_deploy.outputs.page_url }}
+        run: |
+          url="$PAGE_URL"
           for i in 1 2 3 4 5; do
             code=$(curl -s -o /dev/null -w "%{http_code}" "$url" || true)
             if [ "$code" = "200" ]; then echo "online: $url"; exit 0; fi
@@ -122,6 +154,8 @@ jobs:
           done
           echo "site did not return 200"; exit 1
       - name: Check the live site for broken links/assets (criterion 4)
+        env:
+          PAGE_URL: ${{ steps.resolve_deploy.outputs.page_url }}
         run: |
-          url="${{ steps.deploy.outputs.page_url }}"
+          url="$PAGE_URL"
           pnpm dlx linkinator "$url" --recurse --silent
