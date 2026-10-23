@@ -43,6 +43,7 @@ export const heroMetaLine =
 export const nav: LinkItem[] = [
   { label: 'Home', href: '/' },
   { label: 'Projects', href: '/#projects' },
+  { label: 'Gallery', href: '/#gallery' },
   { label: 'CV', href: '/cv/' },
   { label: 'Feed', href: '/feed/' },
   { label: 'Contact', href: 'mailto:hadisssurya@gmail.com' },

@@ -1,0 +1,226 @@
+---
+// Without JavaScript this is a plain horizontal scroll-snap strip: every slide,
+// caption and video stays visible and usable. The script adds the arrows, dots,
+// pause button and auto-advance on top.
+import { Image, getImage } from 'astro:assets';
+import { galleryItems } from '../data/gallery';
+
+const slides = await Promise.all(
+  galleryItems.map(async (item) => {
+    const source = item.kind === 'photo' ? item.image : item.poster;
+    const poster =
+      item.kind === 'video'
+        ? (await getImage({ src: item.poster, width: 1100, format: 'webp', quality: 70 })).src
+        : undefined;
+    return { ...item, source, poster, portrait: source.height > source.width };
+  }),
+);
+---
+
+<div class="gallery mt-10" data-gallery aria-roledescription="carousel" aria-label="Gallery slideshow">
+  <ul class="gallery-track" data-gallery-track tabindex="0">
+    {
+      slides.map((slide, index) => (
+        <li
+          class="gallery-slide"
+          data-gallery-slide
+          aria-roledescription="slide"
+          aria-label={`${index + 1} of ${slides.length}`}
+        >
+          <figure>
+            <div class="gallery-media">
+              {slide.kind === 'photo' ? (
+                <>
+                  {slide.portrait && (
+                    <Image
+                      src={slide.source}
+                      alt=""
+                      aria-hidden="true"
+                      widths={[640, 1100, 1600]}
+                      sizes="(min-width: 1152px) 760px, (min-width: 768px) 72vw, 85vw"
+                      format="webp"
+                      quality={72}
+                      loading="lazy"
+                      class="gallery-backdrop"
+                    />
+                  )}
+                  <Image
+                    src={slide.source}
+                    alt={slide.alt}
+                    widths={[640, 1100, 1600]}
+                    sizes="(min-width: 1152px) 760px, (min-width: 768px) 72vw, 85vw"
+                    format="webp"
+                    quality={72}
+                    loading={index < 2 || index === slides.length - 1 ? 'eager' : 'lazy'}
+                    class:list={['relative h-full w-full', slide.portrait ? 'object-contain' : 'object-cover']}
+                  />
+                </>
+              ) : (
+                <video
+                  src={slide.src}
+                  poster={slide.poster}
+                  controls
+                  playsinline
+                  preload="none"
+                  aria-label={slide.alt}
+                  class="h-full w-full bg-black object-contain"
+                />
+              )}
+            </div>
+            <figcaption class="text-meta mt-3 text-text-muted">
+              {slide.kind === 'video' && <span class="text-accent-ink">Video · {slide.duration} — </span>}
+              {slide.caption}
+            </figcaption>
+          </figure>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<script>
+  const AUTO_ADVANCE_MS = 5000;
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-gallery]')) {
+    const track = root.querySelector<HTMLElement>('[data-gallery-track]')!;
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('[data-gallery-slide]'));
+    const videos = Array.from(root.querySelectorAll('video'));
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let current = 0;
+    let timer: number | undefined;
+    let userPaused = reducedMotion.matches;
+    let hovering = false;
+    let focused = false;
+    let onScreen = false;
+
+    root.classList.add('is-enhanced');
+
+    const button = (className: string, label: string, text: string) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = `theme-toggle ${className}`;
+      el.setAttribute('aria-label', label);
+      el.textContent = text;
+      return el;
+    };
+
+    const prev = button('gallery-arrow gallery-arrow-prev', 'Previous slide', '‹');
+    const next = button('gallery-arrow gallery-arrow-next', 'Next slide', '›');
+    root.append(prev, next);
+
+    const controls = document.createElement('div');
+    controls.className = 'gallery-controls';
+    const pause = button('gallery-pause', '', '');
+    const dots = document.createElement('div');
+    dots.className = 'gallery-dots';
+    const dotButtons = slides.map((_, index) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'gallery-dot';
+      dot.setAttribute('aria-label', `Go to slide ${index + 1}`);
+      dot.addEventListener('click', () => goTo(index));
+      dots.append(dot);
+      return dot;
+    });
+    controls.append(pause, dots);
+    root.append(controls);
+
+    const playing = () => videos.some((video) => !video.paused && !video.ended);
+    const canAdvance = () => !userPaused && !hovering && !focused && onScreen && !document.hidden && !playing();
+
+    const schedule = () => {
+      window.clearTimeout(timer);
+      if (canAdvance()) timer = window.setTimeout(() => goTo(current + 1), AUTO_ADVANCE_MS);
+    };
+
+    const renderPause = () => {
+      pause.textContent = userPaused ? '▶' : '❚❚';
+      pause.setAttribute('aria-label', userPaused ? 'Play slideshow' : 'Pause slideshow');
+      track.setAttribute('aria-live', userPaused ? 'polite' : 'off');
+    };
+
+    const setActive = (index: number) => {
+      current = index;
+      slides.forEach((slide, i) => slide.classList.toggle('is-active', i === index));
+      dotButtons.forEach((dot, i) => dot.setAttribute('aria-current', i === index ? 'true' : 'false'));
+      schedule();
+    };
+
+    function goTo(index: number) {
+      const target = slides[(index + slides.length) % slides.length];
+      const left = target.offsetLeft - (track.clientWidth - target.clientWidth) / 2;
+      track.scrollTo({ left, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+    }
+
+    let frame = 0;
+    track.addEventListener('scroll', () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const center = track.scrollLeft + track.clientWidth / 2;
+        let nearest = 0;
+        slides.forEach((slide, i) => {
+          const distance = Math.abs(slide.offsetLeft + slide.clientWidth / 2 - center);
+          const best = Math.abs(slides[nearest].offsetLeft + slides[nearest].clientWidth / 2 - center);
+          if (distance < best) nearest = i;
+        });
+        if (nearest !== current) setActive(nearest);
+      });
+    });
+
+    prev.addEventListener('click', () => goTo(current - 1));
+    next.addEventListener('click', () => goTo(current + 1));
+    pause.addEventListener('click', () => {
+      userPaused = !userPaused;
+      renderPause();
+      schedule();
+    });
+    root.addEventListener('keydown', (event) => {
+      if (event.target instanceof HTMLVideoElement) return;
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      // Stop the focused track's native arrow scroll from doubling the move.
+      event.preventDefault();
+      goTo(current + (event.key === 'ArrowLeft' ? -1 : 1));
+    });
+
+    root.addEventListener('pointerenter', () => {
+      hovering = true;
+      schedule();
+    });
+    root.addEventListener('pointerleave', () => {
+      hovering = false;
+      schedule();
+    });
+    root.addEventListener('focusin', () => {
+      focused = true;
+      schedule();
+    });
+    root.addEventListener('focusout', (event) => {
+      if (root.contains(event.relatedTarget as Node)) return;
+      focused = false;
+      schedule();
+    });
+    document.addEventListener('visibilitychange', schedule);
+    for (const video of videos) {
+      video.addEventListener('play', schedule);
+      video.addEventListener('pause', schedule);
+      video.addEventListener('ended', schedule);
+    }
+    // A video left playing off-screen would keep running behind the next slide.
+    const pauseOffscreenVideos = () =>
+      videos.forEach((video) => {
+        if (!slides[current].contains(video)) video.pause();
+      });
+    track.addEventListener('scrollend', pauseOffscreenVideos);
+
+    new IntersectionObserver(
+      ([entry]) => {
+        onScreen = entry.isIntersecting;
+        schedule();
+      },
+      { threshold: 0.5 },
+    ).observe(root);
+
+    renderPause();
+    setActive(0);
+  }
+</script>

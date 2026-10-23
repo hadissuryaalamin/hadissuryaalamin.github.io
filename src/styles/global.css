@@ -326,3 +326,139 @@ picture {
   border-color: var(--border-strong);
   color: var(--accent-ink);
 }
+
+/* ---------------------------------------------------------------------- *
+ * Gallery
+ * ---------------------------------------------------------------------- */
+
+.gallery {
+  --slide-width: 85cqw;
+
+  position: relative;
+  container-type: inline-size;
+}
+
+@media (width >= 768px) {
+  .gallery {
+    --slide-width: 72cqw;
+  }
+}
+
+.gallery-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-inline: calc((100cqw - var(--slide-width)) / 2);
+}
+
+.gallery-track::-webkit-scrollbar {
+  display: none;
+}
+
+.gallery-slide {
+  flex: 0 0 var(--slide-width);
+  scroll-snap-align: center;
+}
+
+.gallery-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.gallery-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(24px) brightness(0.85);
+  transform: scale(1.15);
+}
+
+/* Dimming only happens once the script has run, so with JS off every slide
+   stays at full opacity (epic.md §8.4.2). */
+.gallery.is-enhanced .gallery-slide {
+  opacity: 0.5;
+  transition: opacity 0.4s ease-out;
+}
+
+.gallery.is-enhanced .gallery-slide.is-active {
+  opacity: 1;
+}
+
+/* Reduced motion keeps every slide at full opacity (criterion 42); the dots
+   still mark the current one. */
+@media (prefers-reduced-motion: reduce) {
+  .gallery.is-enhanced .gallery-slide {
+    opacity: 1;
+    transition: none;
+  }
+}
+
+.gallery-arrow {
+  position: absolute;
+
+  /* Vertical middle of a 16:9 slide, less half the 40px button. A margin, not
+     a transform, so criterion 42 sees no transform. */
+  top: calc(var(--slide-width) * 9 / 32);
+  z-index: 1;
+  margin-top: -20px;
+  background: var(--bg);
+  font-size: 1.5rem;
+}
+
+.gallery-arrow-prev {
+  left: max(0px, calc((100cqw - var(--slide-width)) / 2 - 20px));
+}
+
+.gallery-arrow-next {
+  right: max(0px, calc((100cqw - var(--slide-width)) / 2 - 20px));
+}
+
+.gallery-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.gallery-pause {
+  width: 32px;
+  height: 32px;
+  font-size: 0.75rem;
+}
+
+.gallery-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.gallery-dot {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+
+.gallery-dot::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--text-muted);
+}
+
+.gallery-dot[aria-current='true']::after {
+  background: var(--accent);
+  border-color: var(--accent);
+}
